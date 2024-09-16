@@ -1,9 +1,11 @@
 from math import sin, cos
+import math
 import random
 import timeit
 from PIL import Image, ImageFilter, ImageDraw
 import numpy as np
 import numba
+from gradient import find_gradient, find_ones
 
 
 def find_edges(image):
@@ -127,22 +129,70 @@ def clear_outer(image_array):
 
 def resize_image(image):
     width, height = image.size
-    new_width = min(200, width)
+    new_width = min(500, width)
     new_height = int(new_width * height / width)
     image = image.resize((new_width, new_height), Image.LANCZOS)
+    print(image.size)
     return image
+
+
+def clear_array(image_array):
+    return np.clip(image_array, 0, 1)
 
 
 def main():
     # "D:/Image_filters/lines/line5062014251101771877.jpg"
-    # image = load("Pepsi-logo.png")
-    image = load("circle.png")
+    image = load("Pepsi-logo.png")
+    # image = load("circle.png")
 
     image = resize_image(image)
     image_grayscale = image.convert("L")
 
     edges = find_edges(image_grayscale)
     image_array = np.array(edges)
+    image_array = clear_array(image_array)
+
+    BOX_SIZE = 9
+
+    w = int(np.ceil(len(image_array) / BOX_SIZE) + 1)
+    h = int(np.ceil(len(image_array[0]) / BOX_SIZE) + 1)
+
+    gradients = np.full((w, h), math.nan, dtype=np.float64)
+    for i in range(0, len(image_array), BOX_SIZE):
+        for j in range(0, len(image_array[i]), BOX_SIZE):
+
+            gradient = find_gradient(image_array[i : i + BOX_SIZE, j : j + BOX_SIZE])
+            gradients[i // BOX_SIZE, j // BOX_SIZE] = gradient
+
+    from matplotlib import pyplot as plt
+
+    ones = find_ones(image_array)
+
+    for one in ones:
+        plt.scatter(one[1], len(image_array) - one[0], color=(1, 1, 0, 0.5))
+    print("scatter done")
+    for i in range(0, len(gradients)):
+        for j in range(0, len(gradients[i])):
+            grad = gradients[i, j]
+            if math.nan == grad:
+                continue
+
+            if math.inf == grad:
+                theta = 90
+            else:
+                theta = math.atan2(-grad, 1)
+
+            plt.arrow(
+                j * BOX_SIZE,
+                len(image_array) - i * BOX_SIZE,
+                BOX_SIZE * math.cos(theta),
+                BOX_SIZE * math.sin(theta),
+            )
+    edges.show()
+    plt.show()
+    # TODO
+    exit()
+
     image_array = clear_outer(image_array)
 
     image_array = np.minimum(image_array, np.ones(image_array.shape))
