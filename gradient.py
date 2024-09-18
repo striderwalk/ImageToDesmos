@@ -1,8 +1,7 @@
 import math
-from typing import List, Tuple
+from typing import List
 import numba
 import numpy as np
-import tcod
 
 
 @numba.jit()
@@ -45,9 +44,11 @@ def get_extreme(points):
 
 @numba.jit()
 def find_ones(image_array):
+
     points = []
     for i in range(len(image_array)):
         for j in range(len(image_array[i])):
+
             if image_array[i, j] != 0:
                 points.append([i, j])
     return points
@@ -111,7 +112,7 @@ def find_gradient(image_array):
         return grad
 
     if len(find_entrances(image_array)) > 2:
-        print("WARN: MULITPLE ENTIES")
+        print("WARNING: MULITPLE ENTRIES")
         print(extreme)
         print_image(image_array)
         return math.nan
