@@ -1,7 +1,12 @@
 from PIL import Image, ImageDraw
 
-image = Image.new("RGB", (200, 200))
+image = Image.new("RGB", (50, 50))
 draw = ImageDraw.Draw(image)
-draw.circle((100, 100), 50)
+draw.line([(0, 0), (0, 50)])
+draw.line([(10, 0), (10, 50)])
+draw.line([(20, 0), (20, 50)])
+draw.line([(30, 0), (30, 50)])
+draw.line([(40, 0), (40, 50)])
 
-image.save("circle.png")
+
+image.save("line.png")

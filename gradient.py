@@ -6,7 +6,7 @@ import tcod
 
 
 @numba.jit()
-def get_extreme(points) -> List[Tuple[int, int]]:
+def get_extreme(points):
     extreme_points = []
 
     points = np.array(points)
@@ -20,6 +20,7 @@ def get_extreme(points) -> List[Tuple[int, int]]:
     min_j = min(j)
 
     for point in points:
+
         if point[0] == max_i and point[1] == max_j:
             extreme_points.append(point)
             continue
@@ -35,7 +36,11 @@ def get_extreme(points) -> List[Tuple[int, int]]:
             extreme_points.append(point)
             continue
 
-    return extreme_points
+    new_points = np.zeros((len(extreme_points), 2), dtype=np.int64)
+
+    for i in range(len(extreme_points)):
+        new_points[i, :] = extreme_points[i]
+    return new_points
 
 
 @numba.jit()
@@ -44,12 +49,14 @@ def find_ones(image_array):
     for i in range(len(image_array)):
         for j in range(len(image_array[i])):
             if image_array[i, j] != 0:
-                points.append((i, j))
+                points.append([i, j])
     return points
 
 
-@numba.jit(nopython=False)
+@numba.jit()
 def find_gradient(image_array):
+    if np.all(image_array == 0):
+        return math.nan
     points = find_ones(image_array)
     image_array = remove_lone_points(image_array, points)
 
@@ -65,8 +72,43 @@ def find_gradient(image_array):
 
         return grad
 
-    if len(extreme) == 4:
-        return find_parralel(image_array, extreme)
+    if extreme.shape[0] == 4:
+        return find_parralel(extreme, points)
+    if extreme.shape[0] == 3:
+        p1 = extreme[0]
+        p2 = extreme[1]
+        p3 = extreme[2]
+
+        if p1[0] == p2[0] and p2[1] == p3[0]:
+            if (p1[1] - p3[1]) == 0:
+                return math.inf
+            grad = (p1[0] - p3[0]) / (p1[1] - p3[1])
+
+        if p1[0] == p3[0] and p3[1] == p2[0]:
+            if (p1[1] - p2[1]) == 0:
+                return math.inf
+            grad = (p1[0] - p2[0]) / (p1[1] - p2[1])
+
+        if p2[0] == p1[0] and p1[1] == p3[0]:
+            if (p3[1] - p2[1]) == 0:
+                return math.inf
+            grad = (p3[0] - p2[0]) / (p3[1] - p2[1])
+
+        if p2[0] == p3[0] and p3[1] == p1[0]:
+            if (p1[1] - p2[1]) == 0:
+                return math.inf
+            grad = (p1[0] - p2[0]) / (p1[1] - p2[1])
+
+        if p3[0] == p2[0] and p2[1] == p1[0]:
+            if (p1[1] - p3[1]) == 0:
+                return math.inf
+            grad = (p1[0] - p3[0]) / (p1[1] - p3[1])
+
+        if p3[0] == p1[0] and p1[1] == p2[0]:
+            if (p3[1] - p2[1]) == 0:
+                return math.inf
+            grad = (p3[0] - p2[0]) / (p3[1] - p2[1])
+        return grad
 
     if len(find_entrances(image_array)) > 2:
         print("WARN: MULITPLE ENTIES")
@@ -75,37 +117,66 @@ def find_gradient(image_array):
         return math.nan
 
 
-def find_parralel(image_array, extreme) -> float:
-    graph = tcod.path.SimpleGraph(cost=image_array, cardinal=1, diagonal=3)
-    pathfinder = tcod.path.Pathfinder(graph)
+@numba.jit()
+def find_parralel(extreme: List[List[int]], ones) -> float:
 
-    p1 = extreme[0]
-    pathfinder.add_root(p1)
+    line = np.empty((50, 2))
+    line[0, :] = extreme[0]
+    index = 1
+    while True:
 
-    if len(pathfinder.path_to(extreme[1])[1:].tolist()) != 0:
-        # extreme[0] and extreme[1] and the same line
-        pair1 = (p1, extreme[1])
-        pair2 = (extreme[2], extreme[3])
-    if len(pathfinder.path_to(extreme[2])[1:].tolist()) != 0:
-        # extreme[0] and extreme[2] and the same line
-        pair1 = (p1, extreme[2])
-        pair2 = (extreme[1], extreme[3])
+        for i in range(len(line)):
+            if [line[i][0] + 1, line[i][1]] in ones:
+                line[i, :] = [line[i][0] + 1, line[i][1]]
+                index += 1
 
-    if len(pathfinder.path_to(extreme[3])[1:].tolist()) != 0:
-        # extreme[0] and extreme[3] and the same line
-        pair1 = (p1, extreme[3])
-        pair2 = (extreme[1], extreme[2])
+            if [line[i][0] - 1, line[i][1]] in ones:
+                line[i, :] = [line[i][0] - 1, line[i][1]]
+                index += 1
 
-        if pair1[0][1] - pair1[1][1] == 0:
-            grad1 = math.inf
-        else:
-            grad1 = (pair1[0][0] - pair1[1][0]) / (pair1[0][1] - pair1[1][1])
-        if pair2[0][1] - pair2[1][1] == 0:
-            grad2 = math.inf
-        else:
-            grad2 = (pair2[0][0] - pair2[1][0]) / (pair2[0][1] - pair2[1][1])
+            if [line[i][0], line[i][1] + 1] in ones:
+                line[i, :] = [line[i][0], line[i][1] + 1]
+                index += 1
 
-        return (grad1 + grad2) / 2
+            if [line[i][0], line[i][1] - 1] in ones:
+                line[i, :] = [line[i][0], line[i][1] - 1]
+                index += 1
+
+        if np.any(line[:] == extreme[1]):
+            p1x1, p1y1 = extreme[0]
+            p1x2, p1y2 = extreme[1]
+
+            p2x1, p2y1 = extreme[2]
+            p2x2, p2y2 = extreme[3]
+            break
+
+        if np.any(line[:] == extreme[2]):
+            p1x1, p1y1 = extreme[0]
+            p1x2, p1y2 = extreme[2]
+
+            p2x1, p2y1 = extreme[1]
+            p2x2, p2y2 = extreme[3]
+            break
+
+        if np.any(line[:] == extreme[3]):
+            p1x1, p1y1 = extreme[0]
+            p1x2, p1y2 = extreme[3]
+
+            p2x1, p2y1 = extreme[1]
+            p2x2, p2y2 = extreme[2]
+            break
+
+    if p1x1 - p1x2 == 0:
+        grad1 = math.inf
+    else:
+        grad1 = (p1y1 - p1y2) / (p1x1 - p1x2)
+
+    if p2x1 - p2x2 == 0:
+        grad2 = math.inf
+    else:
+        grad2 = (p2y1 - p2y2) / (p2x1 - p2x2)
+
+    return (grad1 + grad2) / 2
 
 
 @numba.jit()
