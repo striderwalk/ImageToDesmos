@@ -1,17 +1,18 @@
 import argparse
 import math
 import os
-import random
 import timeit
-from math import cos, sin
 
-import numba
-from numpy.lib.stride_tricks import sliding_window_view
+from scipy.optimize import curve_fit
 import numpy as np
 from matplotlib import pyplot as plt
+from numpy.lib.stride_tricks import sliding_window_view
 from PIL import Image, ImageDraw, ImageFilter
 
-from gradient import find_gradient, find_ones
+from gradient import find_box_gradient, find_ones
+from groups import find_point_groups
+from splits import find_splits
+from plot import plot_ploys
 
 BOX_SIZE = 7
 
@@ -45,7 +46,7 @@ def clear_outer(image_array):
 
 def resize_image(image):
     width, height = image.size
-    new_width = min(200, width)
+    new_width = min(400, width)
     new_height = int(new_width * height / width)
     image = image.resize((new_width, new_height), Image.LANCZOS)
     return image
@@ -78,15 +79,16 @@ def plot_gradients(image_array, gradients):
         if image_array[edge[0], edge[1]] == 2:
 
             plt.scatter(
-                edge[1], len(image_array) - edge[0], color=(0, 1, 1, 1), marker="o"
+                edge[1], len(image_array) - edge[0], color=(0, 1, 1, 1), marker=","
             )
         if image_array[edge[0], edge[1]] == 1:
 
             plt.scatter(
-                edge[1], len(image_array) - edge[0], color=(1, 1, 0, 0.5), marker="."
+                edge[1], len(image_array) - edge[0], color=(1, 1, 0, 0.5), marker=","
             )
 
     print("Scatter done!")
+
     gradients = gradients[::-1]
     for i in range(0, len(gradients)):
         for j in range(0, len(gradients[i])):
@@ -114,189 +116,60 @@ def plot_gradients(image_array, gradients):
     print("Arrows done!")
 
     plt.gca().set_aspect("equal")
-    plt.grid()
-    plt.xticks(np.arange(0, len(image_array[0]) + BOX_SIZE, BOX_SIZE))
-    plt.yticks(np.arange(0, len(image_array) + BOX_SIZE, BOX_SIZE))
+    # plt.grid()
+    # plt.xticks(np.arange(0, len(image_array[0]) + BOX_SIZE, BOX_SIZE))
+    # plt.yticks(np.arange(0, len(image_array) + BOX_SIZE, BOX_SIZE))
     plt.savefig("out.png")
 
+    ones = find_ones(image_array)
+    groups = find_point_groups(ones)
+    for group in groups:
 
-def is_perpendicular(grad1, grad2):
-
-    epsilon = 1
-    if abs(grad2) == 0:
-
-        return np.isinf(abs(grad1))
-
-    if abs(grad1) == 0:
-
-        return np.isinf(grad1)
-
-    if np.isinf(abs(grad1)):
-
-        return abs(grad2) == 0
-
-    if np.isinf(abs(grad2)):
-
-        return abs(grad1) == 0
-
-    # print(grad1, grad2, abs(grad1 - (-1 / grad2)) < epsilon)
-    return abs(grad1 - (-1 / grad2)) < epsilon
-
-
-def find_nearest_edge(point, edges):
-    min_distance = math.inf
-    min_edge = None
-    for edge in edges:
-        distance = math.hypot(point[0] - edge[0], point[1] - edge[1])
-        if distance < min_distance:
-            min_distance = distance
-            min_edge = edge
-
-    if min_edge is None:
-        raise ValueError("No edge found")
-    return min_edge
-
-
-def find_splits(image_array, gradients):
-    edges = find_ones(image_array)
-    for i in range(len(gradients)):
-        for j in range(len(gradients[i])):
-
-            if np.isnan(gradients[i, j]):
-                continue
-
-            # Orthoganals
-            if i < len(gradients) - 1:
-                if not np.isnan(gradients[i + 1, j]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i + 1, j]):
-                        image_i = (i + 1) * BOX_SIZE
-                        image_j = (j) * BOX_SIZE + int(BOX_SIZE / 2)
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[*point] = 2
-                        # print("hi")
-
-            if i > 0:
-                if not np.isnan(gradients[i - 1, j]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i - 1, j]):
-                        image_i = (i - 1) * BOX_SIZE
-                        image_j = (j) * BOX_SIZE + int(BOX_SIZE / 2)
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[*point] = 2
-                        # print("hi")
-
-            if j < len(gradients[0]) - 1:
-                if not np.isnan(gradients[i, j + 1]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i, j + 1]):
-                        image_i = (i) * BOX_SIZE + int(BOX_SIZE / 2)
-                        image_j = (j + 1) * BOX_SIZE
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[*point] = 2
-                        # print("hi")
-
-            if j > 0:
-                if not np.isnan(gradients[i, j - 1]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i, j - 1]):
-                        image_i = (i) * BOX_SIZE + int(BOX_SIZE / 2)
-                        image_j = (j - 1) * BOX_SIZE
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[*point] = 2
-                        # print("hi")
-
-            # Diagonals
-            if i < len(gradients) - 1 and j < len(gradients[0]) - 1:
-                if not np.isnan(gradients[i + 1, j + 1]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i + 1, j + 1]):
-                        image_i = (i + 1) * BOX_SIZE
-                        image_j = (j + 1) * BOX_SIZE
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[*point] = 2
-                        # print("hi")
-
-            if i > 0 and j < len(gradients[0]) - 1:
-                if not np.isnan(gradients[i - 1, j + 1]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i - 1, j + 1]):
-                        image_i = (i - 1) * BOX_SIZE
-                        image_j = (j + 1) * BOX_SIZE
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[*point] = 2
-                        # print("hi")
-
-            if i < len(gradients) - 1 and j > 0:
-                if not np.isnan(gradients[i + 1, j - 1]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i + 1, j - 1]):
-                        image_i = (i + 1) * BOX_SIZE
-                        image_j = (j - 1) * BOX_SIZE
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[*point] = 2
-                        # print("hi")
-
-            if i > 0 and j > 0:
-                if not np.isnan(gradients[i - 1, j - 1]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i - 1, j - 1]):
-                        image_i = (i - 1) * BOX_SIZE
-                        image_j = (j - 1) * BOX_SIZE
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[*point] = 2
-                        # print("hi")
-
-    return image_array
+        c = np.random.random(4)
+        for p in group:
+            plt.scatter(p[1], len(image_array) - p[0], color=c, marker=",")
+    plt.savefig("groups.png")
 
 
 def find_t_points(image_array):
 
     subarrays = sliding_window_view(image_array, (3, 3))
 
-    cases = [
-        np.array(
-            [
-                [0, 1, 0],
-                [1, 1, 1],
-                [0, 1, 0],
-            ]
-        ),
-        np.array(
-            [
-                [0, 1, 0],
-                [1, 1, 0],
-                [0, 1, 0],
-            ]
-        ),
-        np.array(
-            [
-                [0, 1, 0],
-                [0, 1, 1],
-                [0, 1, 0],
-            ]
-        ),
-        np.array(
-            [
-                [0, 0, 0],
-                [1, 1, 1],
-                [0, 1, 0],
-            ]
-        ),
-        np.array(
-            [
-                [0, 1, 0],
-                [1, 1, 1],
-                [0, 0, 0],
-            ]
-        ),
-    ]
+    cases = {
+        (1, 1): [
+            [0, 1, 0],
+            [1, 1, 1],
+            [0, 1, 0],
+        ],
+        (1, 2): [
+            [0, 1, 0],
+            [1, 1, 0],
+            [0, 1, 0],
+        ],
+        (1, 0): [
+            [0, 1, 0],
+            [0, 1, 1],
+            [0, 1, 0],
+        ],
+        (0, 1): [
+            [0, 0, 0],
+            [1, 1, 1],
+            [0, 1, 0],
+        ],
+        (2, 1): [
+            [0, 1, 0],
+            [1, 1, 1],
+            [0, 0, 0],
+        ],
+    }
     all_center_indices = []
-    for case in cases:
+    for offset, case in cases.items():
+        case = np.array(case)
         matches = np.all(subarrays == case, axis=(2, 3))
         match_indices = np.argwhere(matches)
-        center_indices = match_indices + 1
+        center_indices = match_indices
         for index in center_indices:
+
             all_center_indices.append(index)
 
     return np.array(all_center_indices)
@@ -304,7 +177,7 @@ def find_t_points(image_array):
 
 def remove_t_points(image_array):
     for t in find_t_points(image_array):
-        image_array[t[0], t[1]] = 0
+        image_array[t[0] : t[0] + 3, t[1] : t[1] + 3] = 0
     return image_array
 
 
@@ -317,10 +190,55 @@ def find_gradients(image_array):
     for i in range(0, len(image_array), BOX_SIZE):
         for j in range(0, len(image_array[i]), BOX_SIZE):
 
-            gradient = find_gradient(image_array[i : i + BOX_SIZE, j : j + BOX_SIZE])
+            gradient = find_box_gradient(
+                image_array[i : i + BOX_SIZE, j : j + BOX_SIZE]
+            )
             gradients[i // BOX_SIZE, j // BOX_SIZE] = gradient
 
     return gradients
+
+
+def fit_curves(groups):
+    curves = []
+    for group in groups:
+        group = np.array(group)
+
+        # Try a linear model
+        if (group[0, 1] - group[-1, 1]) == 0:
+            # Check if line is vertical
+            if np.all(group[:, 1] == group[0][1]):
+                minx = min(points[:, 1])
+                maxx = max(points[:, 1])
+
+                curves.append([(math.inf, group[0, 1]), minx, maxx])
+
+        else:
+            m = (group[0, 0] - group[-1, 0]) / (group[0, 1] - group[-1, 1])
+
+            c = group[0, 0] - m * group[-1, 0]
+
+            epsilon = 0.5
+            valid = True
+            for p in group:
+                if p[1] - m * p[0] - c > epsilon:
+                    valid = False
+                    break
+            if valid:
+                minx = min(points[:, 1])
+                maxx = max(points[:, 1])
+                curves.append([(m, c), minx, maxx])
+
+        points = np.array(group)
+        x = points[:, 1]
+        y = points[:, 0]
+
+        minx = min(points[:, 1])
+        maxx = max(points[:, 1])
+
+        degree = 5
+        curves.append([np.polyfit(x, y, degree), minx, maxx])
+
+    return curves
 
 
 def main():
@@ -346,10 +264,15 @@ def main():
     gradients = find_gradients(image_array)
 
     # Split the lines using the gradient
-    image_array = find_splits(image_array, gradients)
+    image_array = find_splits(image_array, gradients, BOX_SIZE)
 
     # Display
     plot_gradients(image_array, gradients)
+
+    # ones = find_ones(image_array)
+    # groups = find_point_groups(ones)
+
+    # plot_ploys(fit_curves(groups))
 
 
 if __name__ == "__main__":
