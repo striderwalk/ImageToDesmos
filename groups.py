@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def find_point_group(ones, point):
     line = [point]
 
@@ -49,7 +52,7 @@ def find_point_group(ones, point):
 
         if len(line) == length:
             break
-    return line
+    return np.array(line, dtype=np.float64)
 
 
 def find_point_groups(ones):

@@ -141,7 +141,7 @@ def find_box_gradient(image_array):
     if len(find_entrances(image_array)) > 2:
         print("WARNING: MULITPLE ENTRIES")
         print(extreme)
-        print_image(image_array)
+        print_array(image_array)
         return math.nan
 
 
@@ -240,18 +240,21 @@ def find_entrances(image_array):
 
 
 @numba.jit()
-def print_image(image_array):
-    # Print the box with nice formatting and colours.
-    for i in image_array:
+def print_array(array):
+
+    # Print the box with nice formatting.
+    print("___" * (len(array) + 1))
+
+    for i in array:
         string = ""
         for j in i:
             if j == 1:
-                string += "\u001b[33;1m 1 "
+                string += " 1 "
 
             else:
-                string += "\u001b[31;1m 0 "
-        print(string)
-    print("\u001b[0m")
+                string += " _ "
+        print("| " + string + " |")
+    print("___" * (len(array) + 1))
 
 
 @numba.jit()
@@ -282,7 +285,7 @@ def gen_line(gradient, size=5):
         if i * gradient <= size + 1:
             image_array[int((i - 1) * gradient), i - 1] = 1
 
-    print_image(image_array)
+    print_array(image_array)
     print(gradient)
     return image_array
 

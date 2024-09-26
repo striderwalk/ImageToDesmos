@@ -1,18 +1,18 @@
 import argparse
 import math
 import os
+
 import timeit
 
-from scipy.optimize import curve_fit
 import numpy as np
 from matplotlib import pyplot as plt
 from numpy.lib.stride_tricks import sliding_window_view
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageFilter
 
+from curves import find_curve
 from gradient import find_box_gradient, find_ones
 from groups import find_point_groups
 from splits import find_splits
-from plot import plot_ploys
 
 BOX_SIZE = 7
 
@@ -46,7 +46,7 @@ def clear_outer(image_array):
 
 def resize_image(image):
     width, height = image.size
-    new_width = min(400, width)
+    new_width = min(200, width)
     new_height = int(new_width * height / width)
     image = image.resize((new_width, new_height), Image.LANCZOS)
     return image
@@ -72,23 +72,21 @@ def process_args():
 
 
 def plot_gradients(image_array, gradients):
+
     edges_positions = find_ones(image_array)
-
     for edge in edges_positions:
-
+        # Show grad splits.
         if image_array[edge[0], edge[1]] == 2:
-
             plt.scatter(
                 edge[1], len(image_array) - edge[0], color=(0, 1, 1, 1), marker=","
             )
+        # Show grad normal points.
         if image_array[edge[0], edge[1]] == 1:
-
             plt.scatter(
                 edge[1], len(image_array) - edge[0], color=(1, 1, 0, 0.5), marker=","
             )
 
-    print("Scatter done!")
-
+    # Show the calculated gradient per box
     gradients = gradients[::-1]
     for i in range(0, len(gradients)):
         for j in range(0, len(gradients[i])):
@@ -113,22 +111,20 @@ def plot_gradients(image_array, gradients):
                 head_width=0.75,
             )
 
-    print("Arrows done!")
-
     plt.gca().set_aspect("equal")
     # plt.grid()
     # plt.xticks(np.arange(0, len(image_array[0]) + BOX_SIZE, BOX_SIZE))
     # plt.yticks(np.arange(0, len(image_array) + BOX_SIZE, BOX_SIZE))
-    plt.savefig("out.png")
+    plt.savefig("output/gradients.png")
 
-    ones = find_ones(image_array)
-    groups = find_point_groups(ones)
+
+def plot_groups(groups, image_array, filename="groups.png"):
+    plt.clf()
     for group in groups:
-
         c = np.random.random(4)
         for p in group:
             plt.scatter(p[1], len(image_array) - p[0], color=c, marker=",")
-    plt.savefig("groups.png")
+    plt.savefig("output/" + filename)
 
 
 def find_t_points(image_array):
@@ -198,49 +194,6 @@ def find_gradients(image_array):
     return gradients
 
 
-def fit_curves(groups):
-    curves = []
-    for group in groups:
-        group = np.array(group)
-
-        # Try a linear model
-        if (group[0, 1] - group[-1, 1]) == 0:
-            # Check if line is vertical
-            if np.all(group[:, 1] == group[0][1]):
-                minx = min(points[:, 1])
-                maxx = max(points[:, 1])
-
-                curves.append([(math.inf, group[0, 1]), minx, maxx])
-
-        else:
-            m = (group[0, 0] - group[-1, 0]) / (group[0, 1] - group[-1, 1])
-
-            c = group[0, 0] - m * group[-1, 0]
-
-            epsilon = 0.5
-            valid = True
-            for p in group:
-                if p[1] - m * p[0] - c > epsilon:
-                    valid = False
-                    break
-            if valid:
-                minx = min(points[:, 1])
-                maxx = max(points[:, 1])
-                curves.append([(m, c), minx, maxx])
-
-        points = np.array(group)
-        x = points[:, 1]
-        y = points[:, 0]
-
-        minx = min(points[:, 1])
-        maxx = max(points[:, 1])
-
-        degree = 5
-        curves.append([np.polyfit(x, y, degree), minx, maxx])
-
-    return curves
-
-
 def main():
 
     # Load the image:
@@ -250,6 +203,9 @@ def main():
 
     # Dectect the edges of the image
     image_edges = edge_detection(image)
+
+    image_edges.save("output/edges.png")
+
     # Convert the image to an array
     image_array = np.array(image_edges)
     image_array = clear_array(image_array)
@@ -260,6 +216,11 @@ def main():
     # Remove all (that I can find) T points
     image = remove_t_points(image_array)
 
+    # Plot groups pre-gradienting
+    ones = find_ones(image_array)
+    groups = find_point_groups(ones)
+    plot_groups(groups, image_array, "groups_no_grad.png")
+
     # Find the gradient of edges in a BOX_SIZE x BOX_SIZE box
     gradients = find_gradients(image_array)
 
@@ -267,14 +228,25 @@ def main():
     image_array = find_splits(image_array, gradients, BOX_SIZE)
 
     # Display
-    plot_gradients(image_array, gradients)
+    # TODO plot_gradients(image_array, gradients)
 
-    # ones = find_ones(image_array)
-    # groups = find_point_groups(ones)
+    return
+    ones = find_ones(image_array)
+    groups = find_point_groups(ones)
+    curves = []
+    for group in groups:
+        if x := find_curve(ones, group):
+            curves.append(x)
+    plt.clf()
+    print(curves)
+    X = np.arange(0, 200)
+    for curve in curves:
+        plt.plot(X, list(map(curve, X)))
 
-    # plot_ploys(fit_curves(groups))
+    plt.show()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  #
     time = timeit.timeit(main, number=1)
-    print(time)
+
+    print(f"{time=}s")
