@@ -11,19 +11,19 @@ def linear(x, m, c):
 
 
 def quad(x, a, b, c):
-    return a * x**2 + b * x**1 + c
+    return a * x ** 2 + b * x ** 1 + c
 
 
 def cube(x, a, b, c, d):
-    return a * x**3 + b * x**2 + c * x + d
+    return a * x ** 3 + b * x ** 2 + c * x + d
 
 
 def eplise(x, a, b, c, d, r):
-    return (d**2 * (r**2 - ((x - a) ** 2) / b**2)) ** 0.5 + c
+    return (d ** 2 * (r ** 2 - ((x - a) ** 2) / b ** 2)) ** 0.5 + c
 
 
 def circle(x, a, b, r):
-    return np.sqrt(r**2 - (x - a) ** 2) + b
+    return np.sqrt(r ** 2 - (x - a) ** 2) + b
 
 
 def euclidean_distance(p1, p2):

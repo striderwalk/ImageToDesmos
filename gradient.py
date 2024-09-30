@@ -139,10 +139,28 @@ def find_box_gradient(image_array):
 
     # Warning: for cases which are currently unaccounded for.
     if len(find_entrances(image_array)) > 2:
-        print("WARNING: MULITPLE ENTRIES")
-        print(extreme)
-        print_array(image_array)
-        return math.nan
+        # https://pmt.physicsandmathstutor.com/download/Maths/A-level/Further/Statistics/Edexcel/FS2/Cheat-Sheets/Ch.1%20Linear%20Regression.pdf
+
+        y, x = np.where(image_array == 1)
+        mean_x = np.mean(x)
+        mean_y = np.mean(y)
+        n = len(x)
+        sxy = np.sum(x * y) - mean_x * mean_y * n
+        sxx = np.sum(x * x) - mean_x * mean_x * n
+        if sxx == 0:
+
+            # Horizontal
+            if np.all(x == x[0]):
+                return np.inf
+
+            # Vertical
+            if np.all(y == y[0]):
+                return 0
+
+        b = sxy / sxx
+        a = mean_y - b * mean_x
+
+        return a
 
 
 @numba.jit()

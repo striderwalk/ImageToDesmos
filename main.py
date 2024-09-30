@@ -1,20 +1,20 @@
 import argparse
 import math
 import os
-
 import timeit
 
 import numpy as np
 from matplotlib import pyplot as plt
-from numpy.lib.stride_tricks import sliding_window_view
 from PIL import Image, ImageFilter
 
-from curves import find_curve
-from gradient import find_box_gradient, find_ones
+from edge_dection import find_edges
 from groups import find_point_groups
+from gradient import find_box_gradient
 from splits import find_splits
+from t_junctions import remove_crosses, remove_t_points
 
-BOX_SIZE = 7
+
+BOX_SIZE = 4
 
 
 def edge_detection(image):
@@ -23,17 +23,44 @@ def edge_detection(image):
     return image
 
 
-def load(file_name):
-    # Load the image
+def get_image_array(file_name):
+    # Load the image.
     image = Image.open(file_name)
 
-    # Convert to standard size
-    image = resize_image(image)
+    image = image.quantize(16)
 
-    # Format the image as grayscale
+    image.save("output/quantize.png")
+
+    # Format the image as grayscale.
     image = image.convert("L")
 
-    return image
+    # Convert to standard size.
+
+    # image = image.filter(ImageFilter.CONTOUR)
+
+    image = resize_image(image)
+
+    # Convert to np array.
+    image_array = np.array(image)
+
+    # Find the edges.
+    image_array = find_edges(image_array)
+
+    # Remove  outer edges.
+    image_array = np.delete(image_array, 0, axis=0)
+    image_array = np.delete(image_array, 1, axis=0)
+
+    image_array = np.delete(image_array, -1, axis=0)
+    image_array = np.delete(image_array, -2, axis=0)
+    image_array = np.delete(image_array, 0, axis=1)
+    image_array = np.delete(image_array, 1, axis=1)
+
+    image_array = np.delete(image_array, -1, axis=1)
+    image_array = np.delete(image_array, -2, axis=1)
+    # Trim the black edges.
+    # image_array = trim_array(image_array)
+
+    return image_array
 
 
 def clear_outer(image_array):
@@ -45,15 +72,13 @@ def clear_outer(image_array):
 
 
 def resize_image(image):
+
     width, height = image.size
-    new_width = min(200, width)
+    new_width = min(150, width)
     new_height = int(new_width * height / width)
     image = image.resize((new_width, new_height), Image.LANCZOS)
+
     return image
-
-
-def clear_array(image_array):
-    return np.clip(image_array, 0, 1)
 
 
 def process_args():
@@ -71,10 +96,44 @@ def process_args():
     return filename
 
 
-def plot_gradients(image_array, gradients):
+def trim_array(image_array):
 
-    edges_positions = find_ones(image_array)
-    for edge in edges_positions:
+    for i in range(0, len(image_array)):
+        if np.all(image_array[i, :] == 0):
+            image_array = np.delete(image_array, i, axis=0)
+        else:
+            break
+
+    for i in range(len(image_array) - 1, -1, -1):
+        if np.all(image_array[i, :] == 0):
+            image_array = np.delete(image_array, i, axis=0)
+        else:
+            break
+
+    for j in range(0, len(image_array[0])):
+        if np.all(image_array[:, j] == 0):
+            image_array = np.delete(image_array, j, axis=1)
+        else:
+            break
+
+    for j in range(len(image_array) - 1, -1, -1):
+        if np.all(image_array[:, j] == 0):
+            image_array = np.delete(image_array, j, axis=1)
+        else:
+            break
+    return image_array
+
+
+def plot_gradients(image_array, gradients):
+    plt.clf()
+
+    I, J = np.where(image_array != 0)
+    for edge in zip(I, J):
+        # Show t splits.
+        if image_array[edge[0], edge[1]] == 3:
+            plt.scatter(
+                edge[1], len(image_array) - edge[0], color=(1, 0, 1, 1), marker=","
+            )
         # Show grad splits.
         if image_array[edge[0], edge[1]] == 2:
             plt.scatter(
@@ -92,7 +151,7 @@ def plot_gradients(image_array, gradients):
         for j in range(0, len(gradients[i])):
 
             grad = gradients[i, j]
-            if math.nan == grad:
+            if math.isnan(grad):
                 continue
 
             if math.inf == grad:
@@ -112,69 +171,24 @@ def plot_gradients(image_array, gradients):
             )
 
     plt.gca().set_aspect("equal")
-    # plt.grid()
-    # plt.xticks(np.arange(0, len(image_array[0]) + BOX_SIZE, BOX_SIZE))
-    # plt.yticks(np.arange(0, len(image_array) + BOX_SIZE, BOX_SIZE))
+    plt.grid()
+    plt.xticks(np.arange(0, len(image_array[0]) + BOX_SIZE, BOX_SIZE))
+    plt.yticks(np.arange(0, len(image_array) + BOX_SIZE, BOX_SIZE))
     plt.savefig("output/gradients.png")
 
 
 def plot_groups(groups, image_array, filename="groups.png"):
     plt.clf()
     for group in groups:
-        c = np.random.random(4)
+        c = np.random.random(3)
         for p in group:
             plt.scatter(p[1], len(image_array) - p[0], color=c, marker=",")
+
+    plt.gca().set_aspect("equal")
+    # plt.grid()
+    # plt.xticks(np.arange(0, len(image_array[0]) + BOX_SIZE, BOX_SIZE))
+    # plt.yticks(np.arange(0, len(image_array) + BOX_SIZE, BOX_SIZE))
     plt.savefig("output/" + filename)
-
-
-def find_t_points(image_array):
-
-    subarrays = sliding_window_view(image_array, (3, 3))
-
-    cases = {
-        (1, 1): [
-            [0, 1, 0],
-            [1, 1, 1],
-            [0, 1, 0],
-        ],
-        (1, 2): [
-            [0, 1, 0],
-            [1, 1, 0],
-            [0, 1, 0],
-        ],
-        (1, 0): [
-            [0, 1, 0],
-            [0, 1, 1],
-            [0, 1, 0],
-        ],
-        (0, 1): [
-            [0, 0, 0],
-            [1, 1, 1],
-            [0, 1, 0],
-        ],
-        (2, 1): [
-            [0, 1, 0],
-            [1, 1, 1],
-            [0, 0, 0],
-        ],
-    }
-    all_center_indices = []
-    for offset, case in cases.items():
-        case = np.array(case)
-        matches = np.all(subarrays == case, axis=(2, 3))
-        match_indices = np.argwhere(matches)
-        center_indices = match_indices
-        for index in center_indices:
-
-            all_center_indices.append(index)
-
-    return np.array(all_center_indices)
-
-
-def remove_t_points(image_array):
-    for t in find_t_points(image_array):
-        image_array[t[0] : t[0] + 3, t[1] : t[1] + 3] = 0
-    return image_array
 
 
 def find_gradients(image_array):
@@ -186,12 +200,23 @@ def find_gradients(image_array):
     for i in range(0, len(image_array), BOX_SIZE):
         for j in range(0, len(image_array[i]), BOX_SIZE):
 
-            gradient = find_box_gradient(
-                image_array[i : i + BOX_SIZE, j : j + BOX_SIZE]
-            )
+            box = image_array[i : i + BOX_SIZE, j : j + BOX_SIZE]
+            gradient = find_box_gradient(box)
             gradients[i // BOX_SIZE, j // BOX_SIZE] = gradient
 
     return gradients
+
+
+def find_ones(image_array):
+    # Find the coordinates of any one in the image array.
+    points = []
+
+    for i in range(len(image_array)):
+        for j in range(len(image_array[i])):
+            # check if the point is a one.
+            if image_array[i, j] == 1:
+                points.append([i, j])
+    return points
 
 
 def main():
@@ -199,51 +224,43 @@ def main():
     # Load the image:
     filename = process_args()
 
-    image = load(filename)
-
-    # Dectect the edges of the image
-    image_edges = edge_detection(image)
-
-    image_edges.save("output/edges.png")
-
-    # Convert the image to an array
-    image_array = np.array(image_edges)
-    image_array = clear_array(image_array)
-
-    # Set all edges to 1 or 0 for non-edge
-    image_array = np.minimum(image_array, np.ones(image_array.shape))
+    image_array = get_image_array(filename)
 
     # Remove all (that I can find) T points
-    image = remove_t_points(image_array)
+    image_array = remove_crosses(image_array)
+    image_array = remove_t_points(image_array)
+
+    print(f"{image_array=}")
+    # Save the image array
+    Image.fromarray(image_array * 255).convert("RGB").save("output/array.png")
 
     # Plot groups pre-gradienting
+    print("pre-groups")
     ones = find_ones(image_array)
     groups = find_point_groups(ones)
+    print("plot")
     plot_groups(groups, image_array, "groups_no_grad.png")
+    print("Start", list(image_array.ravel()).count(1))
 
     # Find the gradient of edges in a BOX_SIZE x BOX_SIZE box
+
+    print("Finding gradients.")
     gradients = find_gradients(image_array)
 
     # Split the lines using the gradient
     image_array = find_splits(image_array, gradients, BOX_SIZE)
 
     # Display
-    # TODO plot_gradients(image_array, gradients)
 
-    return
+    print("Plotting.")
+    plot_gradients(image_array, gradients)
+    print("End", list(image_array.ravel()).count(1))
+
+    # Plot groups post-gradienting
     ones = find_ones(image_array)
     groups = find_point_groups(ones)
-    curves = []
-    for group in groups:
-        if x := find_curve(ones, group):
-            curves.append(x)
-    plt.clf()
-    print(curves)
-    X = np.arange(0, 200)
-    for curve in curves:
-        plt.plot(X, list(map(curve, X)))
-
-    plt.show()
+    groups = [group for group in groups if len(group) > 10]
+    plot_groups(groups, image_array)
 
 
 if __name__ == "__main__":  #

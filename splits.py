@@ -1,5 +1,4 @@
 import math
-from gradient import find_ones
 import numpy as np
 
 
@@ -39,103 +38,48 @@ def find_nearest_edge(point, edges):
     return min_edge
 
 
+def find_ones(image_array):
+    # Find the coordinates of any one in the image array.
+    points = []
+
+    for i in range(len(image_array)):
+        for j in range(len(image_array[i])):
+            # check if the point is a one.
+            if image_array[i, j] != 0:
+                points.append([i, j])
+    return points
+
+
+def to_angle(grad):
+    if math.inf == grad:
+        return math.pi / 2
+    else:
+        return math.atan2(-grad, 1)
+
+
 def find_splits(image_array, gradients, BOX_SIZE):
     edges = find_ones(image_array)
+
     for i in range(len(gradients)):
         for j in range(len(gradients[i])):
 
-            if np.isnan(gradients[i, j]):
+            grad = gradients[i, j]
+            if np.isnan(grad):
                 continue
 
-            # Orthoganals
-            if i < len(gradients) - 1:
-                if not np.isnan(gradients[i + 1, j]):
+            theta = to_angle(grad)
 
-                    if is_perpendicular(gradients[i, j], gradients[i + 1, j]):
-                        image_i = (i + 1) * BOX_SIZE
-                        image_j = (j) * BOX_SIZE + int(BOX_SIZE / 2)
-                        point = find_nearest_edge((image_i, image_j), edges)
+            new_i = i + int(1.5 * math.sin(theta))
+            new_j = j + int(1.5 * math.cos(theta))
 
-                        image_array[
-                            point[0] - 1 : point[0] + 2, point[1] - 1 : point[1] + 2
-                        ] = 2
-
-            if i > 0:
-                if not np.isnan(gradients[i - 1, j]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i - 1, j]):
-                        image_i = (i - 1) * BOX_SIZE
-                        image_j = (j) * BOX_SIZE + int(BOX_SIZE / 2)
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[
-                            point[0] - 1 : point[0] + 2, point[1] - 1 : point[1] + 2
-                        ] = 2
-
-            if j < len(gradients[0]) - 1:
-                if not np.isnan(gradients[i, j + 1]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i, j + 1]):
-                        image_i = (i) * BOX_SIZE + int(BOX_SIZE / 2)
-                        image_j = (j + 1) * BOX_SIZE
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[
-                            point[0] - 1 : point[0] + 2, point[1] - 1 : point[1] + 2
-                        ] = 2
-
-            if j > 0:
-                if not np.isnan(gradients[i, j - 1]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i, j - 1]):
-                        image_i = (i) * BOX_SIZE + int(BOX_SIZE / 2)
-                        image_j = (j - 1) * BOX_SIZE
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[
-                            point[0] - 1 : point[0] + 2, point[1] - 1 : point[1] + 2
-                        ] = 2
-
-            # Diagonals
-            if i < len(gradients) - 1 and j < len(gradients[0]) - 1:
-                if not np.isnan(gradients[i + 1, j + 1]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i + 1, j + 1]):
-                        image_i = (i + 1) * BOX_SIZE
-                        image_j = (j + 1) * BOX_SIZE
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[
-                            point[0] - 1 : point[0] + 2, point[1] - 1 : point[1] + 2
-                        ] = 2
-
-            if i > 0 and j < len(gradients[0]) - 1:
-                if not np.isnan(gradients[i - 1, j + 1]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i - 1, j + 1]):
-                        image_i = (i - 1) * BOX_SIZE
-                        image_j = (j + 1) * BOX_SIZE
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[
-                            point[0] - 1 : point[0] + 2, point[1] - 1 : point[1] + 2
-                        ] = 2
-
-            if i < len(gradients) - 1 and j > 0:
-                if not np.isnan(gradients[i + 1, j - 1]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i + 1, j - 1]):
-                        image_i = (i + 1) * BOX_SIZE
-                        image_j = (j - 1) * BOX_SIZE
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[
-                            point[0] - 1 : point[0] + 2, point[1] - 1 : point[1] + 2
-                        ] = 2
-
-            if i > 0 and j > 0:
-                if not np.isnan(gradients[i - 1, j - 1]):
-
-                    if is_perpendicular(gradients[i, j], gradients[i - 1, j - 1]):
-                        image_i = (i - 1) * BOX_SIZE
-                        image_j = (j - 1) * BOX_SIZE
-                        point = find_nearest_edge((image_i, image_j), edges)
-                        image_array[
-                            point[0] - 1 : point[0] + 2, point[1] - 1 : point[1] + 2
-                        ] = 2
-
+            if np.isnan(gradients[new_i, new_j]):
+                continue
+            other_theta = to_angle(gradients[new_i, new_j])
+            if min(abs(theta - other_theta), abs(other_theta - theta)) > math.pi / 4:
+                image_i = i * BOX_SIZE
+                image_j = j * BOX_SIZE
+                point = find_nearest_edge((image_i, image_j), edges)
+                image_array[
+                    point[0] - 1 : point[0] + 2, point[1] - 1 : point[1] + 2
+                ] = 2
     return image_array

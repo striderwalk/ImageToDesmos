@@ -1,6 +1,8 @@
+import numba
 import numpy as np
 
 
+@numba.jit()
 def find_point_group(ones, point):
     line = [point]
 
@@ -56,7 +58,9 @@ def find_point_group(ones, point):
 
 
 def find_point_groups(ones):
+    print("Grouping.")
     groups = []
     for one in ones:
-        groups.append(find_point_group(ones, one))
+        group = find_point_group(ones, one)
+        groups.append(group)
     return groups
