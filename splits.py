@@ -75,7 +75,7 @@ def find_splits(image_array, gradients, BOX_SIZE):
             if np.isnan(gradients[new_i, new_j]):
                 continue
             other_theta = to_angle(gradients[new_i, new_j])
-            if min(abs(theta - other_theta), abs(other_theta - theta)) > math.pi / 4:
+            if min(abs(theta - other_theta), abs(other_theta - theta)) > math.pi / 6:
                 image_i = i * BOX_SIZE
                 image_j = j * BOX_SIZE
                 point = find_nearest_edge((image_i, image_j), edges)

@@ -21,17 +21,16 @@ def find_edges(image_array):
     # image_array *= 1 / np.max(image_array)
     # print(np.max(image_array))
     image_array = scipy.ndimage.gaussian_filter(image_array, 0.6)
-    k = 0.2
+
+    k = 0.4
     s = 0.95
     guas_1 = scipy.signal.convolve(image_array, G(sigma=s))
     guas_2 = scipy.signal.convolve(image_array, G(sigma=s * k))
 
     image_array = guas_1 - guas_2
 
-    image_array = (image_array >= 0.8).astype(np.uint8)
+    image_array = (image_array >= 0.85).astype(np.uint8)
 
-    # image_array = scipy.ndimage.binary_erosion(
-    #     image_array, structure=np.ones((2, 2))
-    # ).astype(np.uint8)
+    # image_array = scipy.ndimage.binary_erosion(image_array).astype(np.uint8)
 
     return image_array
