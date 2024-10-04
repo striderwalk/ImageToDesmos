@@ -48,7 +48,7 @@ def find_point_groups(image_array):
         clusters = [data[labels == i] for i in range(n_clusters)]  # list of clusters
         return clusters, n_clusters
 
-    x = cluster(np.argwhere(image_array == 1), 1.5)
+    x = cluster(np.argwhere(image_array == 1), 4)
 
     return x[0]
 

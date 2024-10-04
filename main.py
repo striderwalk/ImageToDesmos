@@ -9,7 +9,8 @@ from numpy.lib.stride_tricks import sliding_window_view
 from PIL import Image, ImageFilter
 
 from edge_dection import find_edges
-from gradient import find_box_gradient
+from gradient import find_box_gradient, find_group_gradient
+from group_sort import nearest_neighbor_sort
 from groups import find_point_groups
 from splits import find_splits
 from t_junctions import remove_crosses, remove_t_points
@@ -121,14 +122,14 @@ def trim_array(image_array):
     return image_array
 
 
-def plot_gradients(image_array, gradients):
+def plot_gradients(image_array, group_gradients):
     plt.clf()
 
     print("Plotting edges.")
     # Show grad normal points.
 
     edges = np.argwhere(image_array == 1)
-    plt.scatter(edges[:, 1], len(image_array) - edges[:, 0], color=(1, 1, 0, 0.25), s=1)
+    plt.scatter(edges[:, 1], len(image_array) - edges[:, 0], color=(1, 1, 0, 1), s=1)
 
     # Show grad splits.
     edges = np.argwhere(image_array == 2)
@@ -140,11 +141,10 @@ def plot_gradients(image_array, gradients):
 
     print("Plotting Gradient.")
     # Show the calculated gradient per box
-    gradients = gradients[::-1]
-    for i in range(0, len(gradients)):
-        for j in range(0, len(gradients[i])):
+    # gradients = gradients[::-1]
+    for gradients in group_gradients:
+        for point, grad in gradients[::3]:
 
-            grad = gradients[i, j]
             if math.isnan(grad):
                 continue
 
@@ -154,14 +154,14 @@ def plot_gradients(image_array, gradients):
             else:
                 theta = math.atan2(-grad, 1)
 
-            dx = BOX_SIZE * math.cos(theta) / 2
-            dy = BOX_SIZE * math.sin(theta) / 2
+            dx = (math.cos(theta) / 2) * BOX_SIZE
+            dy = (math.sin(theta) / 2) * BOX_SIZE
             plt.arrow(
-                (j) * BOX_SIZE + BOX_SIZE / 2,
-                (i) * BOX_SIZE + BOX_SIZE / 2,
+                (point[1]),  # * BOX_SIZE + BOX_SIZE / 2,
+                (len(image_array) - point[0]),  # * BOX_SIZE + BOX_SIZE / 2,
                 dx,
                 dy,
-                head_width=0.75,
+                head_width=2,
             )
 
     plt.gca().set_aspect("equal")
@@ -203,27 +203,13 @@ def plot_groups(groups, image_array, filename="groups.png"):
 #     return gradients
 
 
-def find_group_gradient(group):
-    subarrays = sliding_window_view(group, (2))
-    graidents = []
-    for pair in subarrays:
-
-        # Prevent devision by zero.
-        if pair[0][1] - pair[1][1] == 0:
-            graidents.append((pair[0], math.inf))
-
-        # Return the gradient.
-        graidents.append((pair[0], pair[0][0] - pair[1][0]) / (pair[0][1] - pair[1][1]))
-    return graidents
-
-
-def find_gradients(groups):
-    graidents = []
+def find_group_gradients(groups):
+    group_gradients = []
 
     for group in groups:
-        graidents.extend(find_group_gradient(group))
+        group_gradients.append(find_group_gradient(group))
 
-    return graidents
+    return group_gradients
 
 
 def main():
@@ -249,15 +235,15 @@ def main():
     # Find the gradient of edges in a BOX_SIZE x BOX_SIZE box
 
     print("Finding gradients.")
-
-    gradients = find_gradients(groups)
+    groups = [nearest_neighbor_sort(group) for group in groups]
+    group_gradients = find_group_gradients(groups)
 
     # Split the lines using the gradient
-    # image_array = find_splits(image_array, gradients, BOX_SIZE)
+    image_array = find_splits(image_array, group_gradients)
 
     # Display
     print("Plotting.")
-    plot_gradients(image_array, gradients)
+    plot_gradients(image_array, group_gradients)
 
     # Plot groups post-gradienting
     groups = find_point_groups(image_array.copy())

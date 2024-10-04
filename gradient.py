@@ -4,7 +4,141 @@ import numba
 import numpy as np
 
 
-@numba.jit()
+def find_group_gradient(group, grad_size=5):
+
+    group = group[: group.shape[0] - (group.shape[0] % grad_size), :]
+    groups_of_5 = group.reshape(-1, grad_size, 2)
+
+    graidents = []
+    for points in groups_of_5:
+        # print("std", np.std(points, axis=0))
+        graidents.append((points[0], find_subgroup_gradient(points)))
+        # from matplotlib import pyplot as plt
+
+        # plt.clf()
+        # plt.scatter(points[:, 1], points[:, 0])
+        # plt.show()
+
+        continue
+
+        y = points[:, 0]
+        x = points[:, 1]
+
+        mean_x = np.mean(x)
+        mean_y = np.mean(y)
+        n = len(x)
+        sxy = np.sum(x * y) - mean_x * mean_y * n
+        sxx = np.sum(x * x) - mean_x * mean_x * n
+        if sxx == 0:
+
+            # Horizontal
+            if np.all(x == x[0]):
+                graidents.append((points[0], np.inf))
+
+            # Vertical
+            if np.all(y == y[0]):
+                graidents.append((points[0], 0))
+
+        b = sxy / sxx
+        grad = mean_y - b * mean_x
+        graidents.append((points[0], grad))
+
+    return graidents
+
+
+def find_subgroup_gradient(points):
+
+    # Find the outermost points.
+    extreme = get_extreme(points)
+
+    # Two points definine a line.
+    if len(extreme) == 2:
+
+        # Prevent devision by zero.
+        if extreme[0][1] - extreme[1][1] == 0:
+            return math.inf
+
+        # Return the gradient.
+        return (extreme[0][0] - extreme[1][0]) / (extreme[0][1] - extreme[1][1])
+
+    # Must be two lines and perpendicular lines should have been removed.
+    if extreme.shape[0] == 4:
+        return find_parralel(extreme, points)
+
+    """
+    Must be somthing like
+        0 0 0 0 0
+        0 0 0 0 1
+        1 1 1 1*1*
+        0 0 0 0 0
+        0 0 0 0 0
+    So *1* can be removed
+    """
+
+    if extreme.shape[0] == 3:
+        p1 = extreme[0]
+        p2 = extreme[1]
+        p3 = extreme[2]
+
+        # Find the points which shares a coordinate with both other points.
+        if p1[0] == p2[0] and p2[1] == p3[1]:
+            if (p1[1] - p3[1]) == 0:
+                return math.inf
+            return (p1[0] - p3[0]) / (p1[1] - p3[1])
+
+        if p1[0] == p3[0] and p3[1] == p2[1]:
+            if (p1[1] - p2[1]) == 0:
+                return math.inf
+            return (p1[0] - p2[0]) / (p1[1] - p2[1])
+
+        if p2[0] == p1[0] and p1[1] == p3[1]:
+            if (p3[1] - p2[1]) == 0:
+                return math.inf
+            return (p3[0] - p2[0]) / (p3[1] - p2[1])
+
+        if p2[0] == p3[0] and p3[1] == p1[1]:
+            if (p1[1] - p2[1]) == 0:
+                return math.inf
+            return (p1[0] - p2[0]) / (p1[1] - p2[1])
+
+        if p3[0] == p2[0] and p2[1] == p1[1]:
+            if (p1[1] - p3[1]) == 0:
+                return math.inf
+            return (p1[0] - p3[0]) / (p1[1] - p3[1])
+
+        if p3[0] == p1[0] and p1[1] == p2[1]:
+            if (p3[1] - p2[1]) == 0:
+                return math.inf
+            return (p3[0] - p2[0]) / (p3[1] - p2[1])
+
+    # Warning: for cases which are currently unaccounded for.
+
+    # https://pmt.physicsandmathstutor.com/download/Maths/A-level/Further/Statistics/Edexcel/FS2/Cheat-Sheets/Ch.1%20Linear%20Regression.pdf
+
+    y = points[:, 0]
+    x = points[:, 1]
+    mean_x = np.mean(x)
+    mean_y = np.mean(y)
+    n = len(x)
+    sxy = np.sum(x * y) - mean_x * mean_y * n
+    sxx = np.sum(x * x) - mean_x * mean_x * n
+    if sxx == 0:
+
+        # Horizontal
+        if np.all(x == x[0]):
+            return np.inf
+
+        # Vertical
+        if np.all(y == y[0]):
+            return 0
+
+    b = sxy / sxx
+    a = mean_y - b * mean_x
+
+    return a
+
+
+# @numba.jit()
 def get_extreme(points):
     # Find the outermost points in the box.
     extreme_points = []
@@ -163,7 +297,7 @@ def find_box_gradient(image_array):
         return a
 
 
-@numba.jit()
+# @numba.jit()
 def find_parralel(extreme: List[List[int]], ones) -> float:
 
     # *Need* to use an array to make numba happy.

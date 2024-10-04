@@ -1,15 +1,16 @@
+import math
 import numpy as np
 
 
 def pairwise_distance(a, points_b):
 
-    distances = [np.sqrt((a[0] - b0) ** 2 + (a[1] - b1) ** 2) for b0, b1 in points_b]
+    distances = [math.sqrt((a[0] - b0) ** 2 + (a[1] - b1) ** 2) for b0, b1 in points_b]
 
-    return np.column_stack((points_b, distances))
+    return zip(points_b, distances)
 
 
 def nearest_neighbor_sort(points):
-    points = list(points)
+    points = [list(point) for point in points]
     n = len(points)
     # Start from the first point
     sorted_points = [points[0]]
@@ -20,9 +21,11 @@ def nearest_neighbor_sort(points):
 
         distances = pairwise_distance(last_point, points)
         # Calculate distances to all other points
-        min_index = np.argmin(distances[:, 1])
-        nearest_point = distances[min_index, :2]
-        print(nearest_point, last_point)
+
+        nearest_point = min(distances, key=lambda x: x[1])[0]
+
         sorted_points.append(nearest_point)
+
         points.remove(list(nearest_point))
+
     return np.array(sorted_points)
