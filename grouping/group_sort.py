@@ -1,10 +1,11 @@
 import math
+import numba
 import numpy as np
 
 
 def pairwise_distance(a, points_b):
-
-    distances = [math.sqrt((a[0] - b0) ** 2 + (a[1] - b1) ** 2) for b0, b1 in points_b]
+    diff = points_b - a
+    distances = np.hypot(diff[:, 0], diff[:, 1])
 
     return zip(points_b, distances)
 
@@ -19,7 +20,7 @@ def nearest_neighbor_sort(points):
     for _ in range(1, n):
         last_point = sorted_points[-1]
 
-        distances = pairwise_distance(last_point, points)
+        distances = pairwise_distance(np.array(last_point), np.array(points))
         # Calculate distances to all other points
 
         nearest_point = min(distances, key=lambda x: x[1])[0]
