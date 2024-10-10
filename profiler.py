@@ -13,7 +13,7 @@ print("timeing ended")
 
 st = pstats.Stats(pr)
 st.sort_stats(pstats.SortKey.TIME)
-st.print_stats()
+# st.print_stats()
 
 try:
     st.dump_stats(filename="data.prof")

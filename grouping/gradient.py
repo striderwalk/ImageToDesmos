@@ -1,5 +1,6 @@
 import math
 from typing import List
+from matplotlib import pyplot as plt
 import numba
 import numpy as np
 
@@ -9,15 +10,38 @@ def find_group_gradient(group, grad_size=5):
     group = group[: group.shape[0] - (group.shape[0] % grad_size), :]
     groups_of_5 = group.reshape(-1, grad_size, 2)
 
-    graidents = []
+    gradients = []
     for points in groups_of_5:
         # print("std", np.std(points, axis=0))
-        graidents.append((points[0], find_subgroup_gradient(points)))
+
+        y = points[:, 0]
+        x = points[:, 1]
+
+        # plt.scatter(x, y)
+
+        gradients.append((points[0], find_subgroup_gradient(points)))
+
+        point, grad = gradients[-1]
+
+        if math.isnan(grad):
+            continue
+
+        if math.inf == grad:
+            theta = math.pi / 2
+
+        else:
+            theta = math.atan2(-grad, 1)
+        continue
+        dx = (math.cos(theta) / 2) * 7
+        dy = -(math.sin(theta) / 2) * 7
+        print(grad)
+        plt.arrow(point[1], point[0], dx, dy, head_width=2)
         # from matplotlib import pyplot as plt
 
         # plt.clf()
         # plt.scatter(points[:, 1], points[:, 0])
         # plt.show()
+        plt.show()
 
         continue
 
@@ -33,17 +57,17 @@ def find_group_gradient(group, grad_size=5):
 
             # Horizontal
             if np.all(x == x[0]):
-                graidents.append((points[0], np.inf))
+                gradients.append((points[0], np.inf))
 
             # Vertical
             if np.all(y == y[0]):
-                graidents.append((points[0], 0))
+                gradients.append((points[0], 0))
 
         b = sxy / sxx
         grad = mean_y - b * mean_x
-        graidents.append((points[0], grad))
+        gradients.append((points[0], grad))
 
-    return graidents
+    return gradients
 
 
 def find_subgroup_gradient(points):
@@ -59,6 +83,7 @@ def find_subgroup_gradient(points):
             return math.inf
 
         # Return the gradient.
+
         return (extreme[0][0] - extreme[1][0]) / (extreme[0][1] - extreme[1][1])
 
     # Must be two lines and perpendicular lines should have been removed.
@@ -130,6 +155,7 @@ def find_subgroup_gradient(points):
 
         # Vertical
         if np.all(y == y[0]):
+
             return 0
 
     b = sxy / sxx
@@ -181,19 +207,6 @@ def get_extreme(points):
 
 
 @numba.jit()
-def find_ones(image_array):
-    # Find the coordinates of any one in the image array.
-    points = []
-
-    for i in range(len(image_array)):
-        for j in range(len(image_array[i])):
-            # check if the point is a one.
-            if image_array[i, j] != 0:
-                points.append([i, j])
-    return points
-
-
-@numba.jit()
 def find_box_gradient(image_array):
 
     # If the box is empty.
@@ -201,7 +214,7 @@ def find_box_gradient(image_array):
         return math.nan
 
     # Process the box to find ones and remove any lone points since a line should be continuous.
-    points = find_ones(image_array)
+    points = np.argwhere(image_array == 1)
     image_array = remove_lone_points(image_array, points)
 
     # Check that there is still enough points.
