@@ -27,7 +27,8 @@ def is_partial_circle(points, epsilon=0.5):
         m = (y2 - y1) / (x2 - x1)
     else:
         m = math.inf
-    m1 = -1 / m
+
+    m1 = -1 / m if m != 0 else math.inf
     c1 = ymid - m1 * xmid
 
     # Find perp bisector p2, p3
@@ -39,7 +40,7 @@ def is_partial_circle(points, epsilon=0.5):
 
     else:
         m = math.inf
-    m2 = -1 / m
+    m2 = -1 / m if m != 0 else math.inf
     c2 = ymid - m2 * xmid
 
     # Find centre
@@ -95,7 +96,7 @@ def find_full_circles(groups):
     for circle in circles:
 
         groups.remove(circle)
-    groups = [np.array(group) for group in groups]
+
     circles = [np.array(circle) for circle in circles]
 
-    return groups, circles
+    return circles

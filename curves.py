@@ -1,7 +1,6 @@
-from matplotlib import pyplot as plt
 import numpy as np
-from PyDesmos import Graph
-from grouping import is_circle
+
+from grouping import find_subgroup_gradient, is_circle
 
 
 def find_circle(X, Y, possible_points):
@@ -58,30 +57,6 @@ def find_circle(X, Y, possible_points):
     return None
 
 
-def find_curve(possible_points, X, Y):
-    max_r = np.max(X) - np.min(X)
-    if (circle := is_circle(np.column_stack((X, Y)), mode="full")) and len(X) > 30:
-        if circle[1] < max_r:
-
-            return "circle", circle
-
-    polys = [
-        np.polynomial.polynomial.Polynomial(np.polynomial.polynomial.polyfit(X, Y, deg))
-        for deg in range(1, 7)
-    ]
-
-    poly = min(polys, key=lambda func: abs(r_squared(func, X, Y) - 1))
-
-    # dat_range = np.max(X) - np.min(X)
-    # extra = int(dat_range * 0.05) if poly.degree() == 1 else 0
-    # extra = 0
-    # dat = np.arange(np.min(X) - extra, np.max(X) + extra, 0.6)
-
-    dat = np.arange(np.min(X), np.max(X), 0.6)
-
-    return "poly", (poly, dat)
-
-
 def r_squared(func, X, Y):
     """
     r_squared =1 is best
@@ -92,3 +67,37 @@ def r_squared(func, X, Y):
     ss_tot = sum((Y - np.mean(Y)) ** 2)
 
     return 1 - ss_res / ss_tot
+
+
+def find_poly(X, Y):
+
+    polys = [
+        np.polynomial.polynomial.Polynomial(np.polynomial.polynomial.polyfit(X, Y, deg))
+        for deg in range(2, 5)
+    ]
+
+    poly = min(polys, key=lambda func: abs(r_squared(func, X, Y) - 1))
+
+    dat = np.arange(np.min(X), np.max(X), 0.6)
+
+    return "poly", (poly, dat, (np.min(X), np.max(X)))
+
+
+def find_circle(X, Y):
+
+    return "circle", is_circle(np.column_stack((X, Y)), mode="full")
+
+
+def find_line(X, Y):
+
+    if np.max(Y) - np.min(Y) == 0:
+        return "hline", (X, Y)
+
+    if np.max(X) - np.min(X) == 0:
+        return "vline", (X, Y)
+
+    grad = find_subgroup_gradient(np.column_stack((X, Y)))
+
+    c = Y[0] - X[0] * grad
+
+    return "line", (grad, c, X, Y)

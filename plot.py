@@ -56,8 +56,8 @@ def plot_gradients(image_array, group_gradients):
 
             theta = to_angle(grad)
 
-            dx = (math.cos(theta) / 2) * 8
-            dy = (math.sin(theta) / 2) * 8
+            dx = (math.cos(theta)) * 8
+            dy = (math.sin(theta)) * 8
             plt.arrow(
                 (point[1]),  # * BOX_SIZE + BOX_SIZE / 2,
                 (len(image_array) - point[0]),  # * BOX_SIZE + BOX_SIZE / 2,

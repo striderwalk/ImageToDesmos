@@ -12,60 +12,8 @@ def find_group_gradient(group, grad_size=5):
 
     gradients = []
     for points in groups_of_5:
-        # print("std", np.std(points, axis=0))
-
-        y = points[:, 0]
-        x = points[:, 1]
-
-        # plt.scatter(x, y)
 
         gradients.append((points[0], find_subgroup_gradient(points)))
-
-        point, grad = gradients[-1]
-
-        if math.isnan(grad):
-            continue
-
-        if math.inf == grad:
-            theta = math.pi / 2
-
-        else:
-            theta = math.atan2(-grad, 1)
-        continue
-        dx = (math.cos(theta) / 2) * 7
-        dy = -(math.sin(theta) / 2) * 7
-        print(grad)
-        plt.arrow(point[1], point[0], dx, dy, head_width=2)
-        # from matplotlib import pyplot as plt
-
-        # plt.clf()
-        # plt.scatter(points[:, 1], points[:, 0])
-        # plt.show()
-        plt.show()
-
-        continue
-
-        y = points[:, 0]
-        x = points[:, 1]
-
-        mean_x = np.mean(x)
-        mean_y = np.mean(y)
-        n = len(x)
-        sxy = np.sum(x * y) - mean_x * mean_y * n
-        sxx = np.sum(x * x) - mean_x * mean_x * n
-        if sxx == 0:
-
-            # Horizontal
-            if np.all(x == x[0]):
-                gradients.append((points[0], np.inf))
-
-            # Vertical
-            if np.all(y == y[0]):
-                gradients.append((points[0], 0))
-
-        b = sxy / sxx
-        grad = mean_y - b * mean_x
-        gradients.append((points[0], grad))
 
     return gradients
 
