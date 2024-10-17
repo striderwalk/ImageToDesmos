@@ -1,3 +1,4 @@
+import os
 import warnings
 
 import numpy as np
@@ -37,7 +38,7 @@ def get_equations(image_array, grouped_points):
     return curves_gen
 
 
-def write_equations(equations):
+def write_equations(equations, filename):
     formulas = []
     for mode, vals in equations:
 
@@ -47,7 +48,7 @@ def write_equations(equations):
             string = str(poly)
             string = string.replace("\n", "")
             string += f"{r"{"} {bounds[0]} < x < {bounds[1]} {r"}"}"
-            print(string)
+
             formula = poly_to_tex(poly)
 
             formula += (
@@ -61,7 +62,6 @@ def write_equations(equations):
 
             formula = f"(x - {center[0]})^2 + (y - {center[1]})^2 = {r**2}"
             formulas.append(formula)
-            print(formula)
 
         if mode == "p_circle":
 
@@ -74,7 +74,6 @@ def write_equations(equations):
                 bounds = f"{r"\left\{"} {m}x + {c} {r">=" } y {r"\right\} "}"
 
             formulas.append(formula + bounds)
-            print(formula)
 
         if mode == "line":
 
@@ -82,27 +81,25 @@ def write_equations(equations):
 
             formula = f"{grad}x + {c} = y {r"\left\{"} {np.min(X)} {r"<" } x {r"<" } {np.max(X)} {r"\right\} "}  {r"\left\{"} {np.min(Y)} {r"<" } y {r"<" } {np.max(Y)} {r"\right\} "}"
             formulas.append(formula)
-            print(formula)
 
         if mode == "vline":
 
             X, Y = vals
             formula = f"x  = {X[0]} {r"\left\{"} {np.min(Y)} {r"<" } y {r"<" } {np.max(Y)} {r"\right\} "}"
             formulas.append(formula)
-            print(formula)
 
         if mode == "hline":
             X, Y = vals
             formula = f"y = {Y[0]} {r"\left\{"} {np.min(X)} {r"<" } x {r"<" } {np.max(X)} {r"\right\} "}"
             formulas.append(formula)
-            print(formula)
+    base = os.path.splitext(os.path.basename(filename))[0]
 
-    with open("./display/functions.txt", "w") as file:
+    with open("functions/" + base + ".equation", "w") as file:
         for formula in formulas:
             file.write(formula + "\n")
 
 
-def make_curves(image_array, grouped_points, plot=False):
+def make_curves(image_array, grouped_points, filename="function.txt", plot=False):
 
     if plot:
         plt.clf()
@@ -124,7 +121,7 @@ def make_curves(image_array, grouped_points, plot=False):
         plt.clf()
 
     equations = get_equations(image_array, grouped_points)
-    write_equations(equations)
+    write_equations(equations, filename)
 
     if not plot:
         return

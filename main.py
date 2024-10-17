@@ -2,10 +2,11 @@ import argparse
 import os
 import timeit
 
-
 from PIL import Image
-from grouping import get_groups
+
 import graphing
+from grouping import get_groups
+from host import host
 from image_processing import get_image_array
 
 BOX_SIZE = 9
@@ -40,7 +41,9 @@ def main():
 
     grouped_points = get_groups(image_array, plot)
 
-    graphing.make_curves(image_array, grouped_points)
+    graphing.make_curves(image_array, grouped_points, filename=filename, plot=plot)
+    if plot:
+        host()
 
 
 if __name__ == "__main__":

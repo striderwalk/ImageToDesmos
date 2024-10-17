@@ -24,7 +24,6 @@ def get_groups(image_array, plot=False):
 
     # Seperate out circles
     circles = find_full_circles(groups)
-    print(len(circles))
 
     for circle in circles:
         for point in circle:
@@ -36,8 +35,6 @@ def get_groups(image_array, plot=False):
         for point in circle:
 
             image_array[*point] = 0
-
-    print(len(circles))
 
     # Find lines.
     image_array[image_array == 2] = 0

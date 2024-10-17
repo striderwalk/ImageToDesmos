@@ -21,7 +21,7 @@ function display_curves(data) {
     });
   });
 }
-fetch("../functions.txt")
+fetch("./functions/my_face.txt")
   .then((response) => response.text())
   .then((data) => {
     display_curves(data.split("\n"));
