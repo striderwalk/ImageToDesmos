@@ -1,7 +1,42 @@
 import math
 import numpy as np
 
-from .group_sort import pairwise_distance
+from .group_sort import nearest_neighbor_sort, pairwise_distance
+
+
+def A341198(r):
+    # https://oeis.org/A341198
+    x = r
+    y = A = 0
+    while y <= x:
+        dx = x ** 2 + (y + 1) ** 2 - r ** 2 - x >= 0
+        A += x + (y != 0 and y != x) * (x - 2 * y) + (dx and y == x - 1) * (x - 1)
+        x -= dx
+        y += 1
+    return 4 * A + 1
+
+
+def expand_partial_circles(raw_image, p_circles, epsilon=1):
+    points = np.argwhere(raw_image == 1)
+    # See if the partial circle is full
+
+    circles = []
+    for p_circle in p_circles:
+        (center_x, center_y), r = get_circle(p_circle)
+
+        circle_points = [
+            point
+            for point, dis in pairwise_distance((center_x, center_y), points)
+            if dis < r
+        ]
+
+        count = len(circle_points)
+        if abs((A341198(r) - count) / A341198(r)) < 0.9:
+            circles.append(p_circle)
+        else:
+            circles.append(np.array(circle_points))
+
+    return [nearest_neighbor_sort(circle) for circle in circles]
 
 
 def is_full_circle(points, epsilon=1):
@@ -13,7 +48,7 @@ def is_full_circle(points, epsilon=1):
     return center, np.mean(dis)
 
 
-def is_partial_circle(points, epsilon=0.5):
+def is_partial_circle(points, epsilon=1):
     x1, y1 = points[0, :]
     x2, y2 = points[len(points) // 2, :]
     x3, y3 = points[-1, :]
@@ -63,8 +98,10 @@ def is_circle(points, mode="partial"):
         return is_full_circle(points)
     if mode == "partial":
         val = is_partial_circle(points)
+
         if val[0] == False:
             return False
+
         return val
 
     raise ValueError("mode must be either 'partial' or 'full'")
@@ -82,6 +119,7 @@ def get_circle(points, mode="full"):
         if val[0] == False:
             return val[1:]
         return val
+    raise ValueError("mode must be either 'partial' or 'full'")
 
 
 def find_full_circles(groups):
@@ -100,3 +138,21 @@ def find_full_circles(groups):
     circles = [np.array(circle) for circle in circles]
 
     return circles
+
+
+def find_partical_circles(groups):
+    groups = [group.tolist() for group in groups]
+
+    partical_circles = [
+        group
+        for group in groups
+        if is_circle(np.array(group), mode="partial") is not False
+    ]
+
+    for circle in partical_circles:
+
+        groups.remove(circle)
+
+    partical_circles = [np.array(circle) for circle in partical_circles]
+
+    return partical_circles

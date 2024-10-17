@@ -48,7 +48,6 @@ def split_by_gradient(image_array, groups, angle=math.pi / 6, plot=False):
     group_gradients = find_group_gradients(groups)
 
     for group, grad_group in group_gradients:
-        corners(group)
 
         if is_circle(group):
             continue
@@ -64,12 +63,10 @@ def split_by_gradient(image_array, groups, angle=math.pi / 6, plot=False):
 
             if abs(theta - other_theta) > angle:
 
-                image_array[
-                    point[0] - 1 : point[0] + 2, point[1] - 1 : point[1] + 2
-                ] = 2
+                image_array[point[0] : point[0] + 2, point[1] : point[1] + 2] = 2
 
         # If group is a loop.
-        print(grad_group)
+
         point1 = grad_group[0][0]
         point2 = grad_group[-1][0]
         if ((point1[0] + point2[0]) ** 2 + (point1[0] + point2[0]) ** 2) ** 0.5 > 10:
@@ -83,9 +80,7 @@ def split_by_gradient(image_array, groups, angle=math.pi / 6, plot=False):
 
         if abs(theta - other_theta) > angle:
 
-            image_array[
-                point1[0] - 1 : point1[0] + 2, point1[1] - 1 : point1[1] + 2
-            ] = 2
+            image_array[point1[0] : point1[0] + 2, point1[1] : point1[1] + 2] = 2
     # Display
     if plot:
         plot_gradients(image_array, group_gradients)
@@ -127,15 +122,15 @@ def find_y_splits(image_array, groups):
         x = sorted(x_grouped.keys())
 
         min_x = min(x)
-        if len(x_grouped[min_x]) < 5:
+        if len(x_grouped[min_x]) < 10:
             for y in x_grouped[min_x]:
-                image_array[y, min_x] = 3
+                image_array[y, min_x : min_x + 5] = 0
 
         max_x = max(x)
-        if len(x_grouped[max_x]) < 5:
+        if len(x_grouped[max_x]) < 10:
 
             for y in x_grouped[max_x]:
 
-                image_array[y, max_x] = 3
+                image_array[y, max_x - 5 : max_x + 1] = 0
 
     return image_array

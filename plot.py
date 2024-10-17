@@ -41,7 +41,7 @@ def plot_gradients(image_array, group_gradients):
 
     plt.scatter(edges[:, 1], len(image_array) - edges[:, 0], color=(0, 1, 1, 1), s=1)
 
-    # Show t splits.
+    # Show other splits
     edges = np.argwhere(image_array == 3)
     plt.scatter(edges[:, 1], len(image_array) - edges[:, 0], color=(1, 0, 0, 1), s=1)
 
