@@ -10,8 +10,12 @@ def r_squared(func, X, Y):
 
     # https://en.wikipedia.org/wiki/Coefficient_of_determination
     ss_res = sum((Y - func(X)) ** 2)
-    ss_tot = sum((Y - np.mean(Y)) ** 2)
+    meanY = np.mean(Y)
+    ss_tot = sum((Y - meanY) ** 2)
 
+    # Stop division by zero
+    if ss_tot == 0:
+        return 0
     return 1 - ss_res / ss_tot
 
 
@@ -43,6 +47,7 @@ class Polynomial:
     def __init__(self, X, Y):
         self.X = X
         self.Y = Y
+
         self.poly, self.domain = find_poly(X, Y)
 
     def __repr__(self):

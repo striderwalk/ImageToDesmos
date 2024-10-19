@@ -16,6 +16,8 @@ class ImageArray:
         # Load the image.
         image = Image.open(filename)
         # Format the image as grayscale.
+
+        image = image.convert("RGBA")
         image = image.convert("L")
         # Convert to standard size.
         image = resize_image(image)
@@ -46,7 +48,8 @@ class ImageArray:
         return np.argwhere(self.array == 1)
 
     def save(self, filename):
-        Image.fromarray(self.array * 255).convert("RGB").save(filename)
+
+        Image.fromarray(self.array * 255).convert("RGBA").save(filename)
 
     def trim_array(self):
         # Remove  outer edges.

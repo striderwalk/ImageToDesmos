@@ -18,7 +18,12 @@ def get_equations(size, grouped_points):
 
         X = group[:, 1]
         Y = size[0] - group[:, 0]
-        equations.append(Polynomial(X, Y))
+        if np.max(Y) - np.min(Y) == 0 or np.max(X) - np.min(X) == 0:
+            equations.append(Line(X, Y))
+
+        else:
+
+            equations.append(Polynomial(X, Y))
 
     for circle in circles:
         X = circle[:, 1]
