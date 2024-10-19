@@ -155,15 +155,15 @@ def get_extreme(points):
 
 
 @numba.jit()
-def find_box_gradient(image_array):
+def find_box_gradient(array):
 
     # If the box is empty.
-    if np.all(image_array == 0):
+    if np.all(array == 0):
         return math.nan
 
     # Process the box to find ones and remove any lone points since a line should be continuous.
-    points = np.argwhere(image_array == 1)
-    image_array = remove_lone_points(image_array, points)
+    points = np.argwhere(array == 1)
+    array = remove_lone_points(array, points)
 
     # Check that there is still enough points.
     if len(points) < 2:
@@ -233,10 +233,10 @@ def find_box_gradient(image_array):
             return (p3[0] - p2[0]) / (p3[1] - p2[1])
 
     # Warning: for cases which are currently unaccounded for.
-    if len(find_entrances(image_array)) > 2:
+    if len(find_entrances(array)) > 2:
         # https://pmt.physicsandmathstutor.com/download/Maths/A-level/Further/Statistics/Edexcel/FS2/Cheat-Sheets/Ch.1%20Linear%20Regression.pdf
 
-        y, x = np.where(image_array == 1)
+        y, x = np.where(array == 1)
         mean_x = np.mean(x)
         mean_y = np.mean(y)
         n = len(x)
@@ -264,8 +264,7 @@ def find_parralel(extreme: List[List[int]], ones) -> float:
     # *Need* to use an array to make numba happy.
     # Size of 50 because it hasn't been to small yet.
     line = np.empty((50, 2))
-    line[0, :] = extreme[0]  # Index = 0
-    index = 1
+    line[0, :] = extreme[0]
 
     # Follow the line connected to points extreme[0].
     while True:
@@ -274,19 +273,15 @@ def find_parralel(extreme: List[List[int]], ones) -> float:
             # Check for orthganal connections.
             if [line[i][0] + 1, line[i][1]] in ones:
                 line[i, :] = [line[i][0] + 1, line[i][1]]
-                index += 1
 
             if [line[i][0] - 1, line[i][1]] in ones:
                 line[i, :] = [line[i][0] - 1, line[i][1]]
-                index += 1
 
             if [line[i][0], line[i][1] + 1] in ones:
                 line[i, :] = [line[i][0], line[i][1] + 1]
-                index += 1
 
             if [line[i][0], line[i][1] - 1] in ones:
                 line[i, :] = [line[i][0], line[i][1] - 1]
-                index += 1
 
         # Find which other extreme point is in the line and thus the other line's extreme points.
         if np.any(line[:] == extreme[1]):
@@ -329,25 +324,25 @@ def find_parralel(extreme: List[List[int]], ones) -> float:
 
 
 @numba.jit()
-def find_entrances(image_array):
+def find_entrances(array):
 
     # Find all ones that are in an outer row or column of the box.
     points = set()
 
     # Rows
-    for i in range(0, len(image_array)):
-        if image_array[i, 0] != 0:
+    for i in range(0, len(array)):
+        if array[i, 0] != 0:
             points.add((i, 0))
-        if image_array[i, -1] != 0:
-            points.add((i, len(image_array[i]) - 1))
+        if array[i, -1] != 0:
+            points.add((i, len(array[i]) - 1))
 
     # Columns
-    for j in range(0, len(image_array[i])):
-        if image_array[0, j] != 0:
+    for j in range(0, len(array[i])):
+        if array[0, j] != 0:
             points.add((j, 0))
 
-        if image_array[-1, j] != 0:
-            points.add((j, len(image_array[i]) - 1))
+        if array[-1, j] != 0:
+            points.add((j, len(array[i]) - 1))
 
     return list(points)
 
@@ -371,7 +366,7 @@ def print_array(array):
 
 
 @numba.jit()
-def remove_lone_points(image_array, ones):
+def remove_lone_points(array, ones):
 
     for point in ones:
         has_friend = False
@@ -385,22 +380,22 @@ def remove_lone_points(image_array, ones):
             ):
                 has_friend = True
         if not has_friend:
-            image_array[point[0], point[1]] = 0
+            array[point[0], point[1]] = 0
 
-    return image_array
+    return array
 
 
 def gen_line(gradient, size=5):
     # Generate lines of a specified gradient for testing purposes
-    image_array = np.zeros(shape=(size, size))
+    array = np.zeros(shape=(size, size))
 
-    for i in range(1, len(image_array) + 1):
+    for i in range(1, len(array) + 1):
         if i * gradient <= size + 1:
-            image_array[int((i - 1) * gradient), i - 1] = 1
+            array[int((i - 1) * gradient), i - 1] = 1
 
-    print_array(image_array)
+    print_array(array)
     print(gradient)
-    return image_array
+    return array
 
 
 if __name__ == "__main__":

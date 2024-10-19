@@ -1,1 +1,1 @@
-from .process import get_image_array
+from .process import ImageArray

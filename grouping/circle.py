@@ -9,15 +9,15 @@ def A341198(r):
     x = r
     y = A = 0
     while y <= x:
-        dx = x ** 2 + (y + 1) ** 2 - r ** 2 - x >= 0
+        dx = x**2 + (y + 1) ** 2 - r**2 - x >= 0
         A += x + (y != 0 and y != x) * (x - 2 * y) + (dx and y == x - 1) * (x - 1)
         x -= dx
         y += 1
     return 4 * A + 1
 
 
-def expand_partial_circles(raw_image, p_circles, epsilon=1):
-    points = np.argwhere(raw_image == 1)
+def expand_partial_circles(points, p_circles, epsilon=1):
+
     # See if the partial circle is full
 
     circles = []

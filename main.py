@@ -2,51 +2,73 @@ import argparse
 import os
 import timeit
 
-from PIL import Image
-
 import graphing
-from grouping import get_groups
+from grouping import get_grouped_points
 from host import host
-from image_processing import get_image_array
-
-BOX_SIZE = 9
+from image_processing import ImageArray
 
 
 def process_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "filename", type=str, help="Please specify a file in the CWD to convert"
+        "filename",
+        type=str,
+        help="The path of the image to process",
+    )
+    parser.add_argument(
+        "-p",
+        "--plot",
+        action="store_true",
+        default=False,
+        help="Plot different steps in the process to the output directory",
+    )
+    parser.add_argument(
+        "-f",
+        "--fast",
+        action="store_true",
+        default=False,
+        help="Use fast mode to increase speed with a reduction in quality",
+    )
+    parser.add_argument(
+        "--host",
+        action="store_true",
+        default=False,
+        help="Open a desmos page with an interactive graph view",
     )
 
-    parser.add_argument("-p", "--plot", action="store_true", default=False)
     args = parser.parse_args()
     if args.filename and os.path.exists(args.filename):
         filename = args.filename
     else:
-        print("Please specify a file in the CWD to convert")
+        print("Please specify the path of an image to convert")
         exit()
 
-    return filename, args.plot
+    return filename, args
 
 
 def main():
-
+    # Process the command line arguments
+    filename, args = process_args()
     # Load the image:
-    filename, plot = process_args()
-
-    image_array = get_image_array(filename)
+    image = ImageArray(filename)
 
     # Save the image array
-    Image.fromarray(image_array * 255).convert("RGB").save("output/edges.png")
+    image.save("output/edges.png")
 
-    grouped_points = get_groups(image_array, plot)
+    # Display warnings
+    if not args.fast and len(image.get_points()) > 5000:
+        print(
+            "\u001b[31;1mWARNING\u001b[0m: Input image has a high complexity consider using fast mode --fast"
+        )
+    grouped_points = get_grouped_points(image, args)
+    graphing.make_curves(image.size, grouped_points, args)
 
-    graphing.make_curves(image_array, grouped_points, filename=filename, plot=plot)
-    if plot:
+    if args.host:
         host()
 
 
 if __name__ == "__main__":
+
     time = timeit.timeit(main, number=1)
 
     print(f"{time=}s")

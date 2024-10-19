@@ -27,7 +27,7 @@ def find_poly(X, Y):
     # domain=(np.min(X), np.max(X)
     poly = min(polys, key=lambda func: 1 - (r_squared(func, X, Y)))
     # input(f"{np.min(X)==poly.domain[0]} {np.max(X)==poly.domain[1]}")
-    return "poly", (poly, (np.min(X), np.max(X)))
+    return (poly, (np.min(X), np.max(X)))
 
 
 def convert_sci_numbers(string):
@@ -39,11 +39,26 @@ def convert_sci_numbers(string):
     return string
 
 
-def poly_to_tex(poly):
-    string = str(poly)
+class Polynomial:
+    def __init__(self, X, Y):
+        self.X = X
+        self.Y = Y
+        self.poly, self.domain = find_poly(X, Y)
 
-    string = re.sub(r"\*\*(\d+)", r"^{\1}", string)
-    string = string.replace("\n", "")
-    string = convert_sci_numbers(string)
+    def __repr__(self):
+        formula = str(self.poly)
 
-    return "y=" + string
+        formula = re.sub(r"\*\*(\d+)", r"^{\1}", formula)
+        formula = formula.replace("\n", "")
+        formula = convert_sci_numbers(formula)
+        formula += (
+            r" \left\{"
+            + f" {self.domain[0]}"
+            + " < x <"
+            + f" {self.domain[1]}"
+            + r" \right\} "
+        )
+        return "y=" + formula
+
+    def plot(self, ax):
+        ax.plot(self.X, self.poly(self.X), c="blue")

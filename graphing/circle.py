@@ -1,12 +1,13 @@
+from matplotlib import pyplot as plt
 import numpy as np
 
-from grouping import get_circle, nearest_neighbor_sort
+from grouping import get_circle
 
 
 def find_full_circle(X, Y):
     points = np.column_stack((X, Y))
 
-    return "circle", get_circle(points, mode="full")
+    return get_circle(points, mode="full")
 
 
 def find_partial_circle(X, Y):
@@ -23,5 +24,60 @@ def find_partial_circle(X, Y):
     # Above:
     x, y = points[3]
     if x * m + c < y:
-        return "p_circle", (center, r, m, c, "gt")
-    return "p_circle", (center, r, m, c, "lt")
+        return (center, r, m, c, "gt")
+    return (center, r, m, c, "lt")
+
+
+class Circle:
+    def __init__(self, X, Y, mode="full"):
+        self.X = X
+        self.Y = Y
+        self.type = mode
+
+        if self.type == "full":
+            self.center, self.r = find_full_circle(X, Y)
+
+        elif self.type == "partial":
+
+            self.center, self.r, self.m, self.c, self.eq_type = find_partial_circle(
+                X, Y
+            )
+
+    def __repr__(self):
+        if self.type == "full":
+
+            return f"(x - {self.center[0]})^2 + (y - {self.center[1]})^2 = {self.r**2}"
+        elif self.type == "partial":
+
+            formula = (
+                f"(x - {self.center[0]})^2 + (y - {self.center[1]})^2 = {self.r**2}"
+            )
+            if self.eq_type == "gt":
+                bounds = r"\left\{" + f"{self.m}x + {self.c} <= y" + r"\right\}"
+            else:
+                bounds = r"\left\{" + f"{self.m}x + {self.c} >= y" + r"\right\}"
+
+            return formula + bounds
+
+    def plot(self, ax):
+        if self.type == "full":
+
+            ax.add_patch(plt.Circle(self.center, self.r, fill=False))
+
+        elif self.type == "partial":
+
+            points = [
+                (
+                    self.r * np.cos(theta) + self.center[0],
+                    self.r * np.sin(theta) + self.center[1],
+                )
+                for theta in np.linspace(0, np.pi * 2, 3000)
+            ]
+
+            if self.eq_type == "gt":
+                points = [(x, y) for x, y in points if self.m * x + self.c <= y]
+            else:
+                points = [(x, y) for x, y in points if self.m * x + self.c >= y]
+            points = np.array(points)
+
+            ax.plot(points[:, 0], points[:, 1])

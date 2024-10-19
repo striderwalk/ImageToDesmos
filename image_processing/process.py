@@ -1,80 +1,72 @@
-from PIL import Image, ImageFilter
+import cv2
 import numpy as np
-
-from .edge_dection import find_edges
-
-
-def clear_outer(image_array):
-    image_array[0, :] = 0
-    image_array[-1, :] = 0
-    image_array[:, 0] = 0
-    image_array[:, -1] = 0
-    return image_array
+from PIL import Image
 
 
 def resize_image(image):
-
     width, height = image.size
     new_width = min(400, width)
-    # new_width = 1000
     new_height = int(new_width * height / width)
     image = image.resize((new_width, new_height), Image.LANCZOS)
-
     return image
 
 
-def edge_detection(image):
+class ImageArray:
+    def __init__(self, filename):
+        # Load the image.
+        image = Image.open(filename)
+        # Format the image as grayscale.
+        image = image.convert("L")
+        # Convert to standard size.
+        image = resize_image(image)
 
-    image = image.filter(ImageFilter.FIND_EDGES)
-    return image
+        # This denoise the image somewhat which improve edge detection
+        # Or not
+        # image = image.quantize(4)
+        # image.save("output/quantize.png")
 
+        # Convert to np array.
+        self.array = np.array(image)
 
-def get_image_array(file_name):
-    # Load the image.
-    image = Image.open(file_name)
+        # Find the edges.
+        self.find_edges()
 
-    # image = image.quantize(4)
-    # image.save("output/quantize.png")
+        # Trim the black edges.
+        self.trim_array()
 
-    # Format the image as grayscale.
-    image = image.convert("L")
+    def find_edges(self):
+        # Use Canny edge detection and filter
+        self.array = (cv2.Canny(self.array, 100, 200) >= 10).astype(np.uint8)
 
-    # Convert to standard size.
-    image = resize_image(image)
+    @property
+    def size(self):
+        return self.array.shape
 
-    # Convert to np array.
-    image_array = np.array(image)
+    def get_points(self):
+        return np.argwhere(self.array == 1)
 
-    # Find the edges.
-    image_array = find_edges(image_array)
+    def save(self, filename):
+        Image.fromarray(self.array * 255).convert("RGB").save(filename)
 
-    # Remove  outer edges.
-    image_array = np.delete(image_array, 0, axis=0)
-    image_array = np.delete(image_array, 1, axis=0)
+    def trim_array(self):
+        # Remove  outer edges.
 
-    image_array = np.delete(image_array, -1, axis=0)
-    image_array = np.delete(image_array, -2, axis=0)
-    image_array = np.delete(image_array, 0, axis=1)
-    image_array = np.delete(image_array, 1, axis=1)
+        # self.array = np.delete(self.array, 0, axis=0)
+        # self.array = np.delete(self.array, 1, axis=0)
 
-    image_array = np.delete(image_array, -1, axis=1)
-    image_array = np.delete(image_array, -2, axis=1)
-    # Trim the black edges.
-    image_array = trim_array(image_array)
+        # self.array = np.delete(self.array, -1, axis=0)
+        # self.array = np.delete(self.array, -2, axis=0)
+        # self.array = np.delete(self.array, 0, axis=1)
+        # self.array = np.delete(self.array, 1, axis=1)
 
-    return image_array
+        # self.array = np.delete(self.array, -1, axis=1)
+        # self.array = np.delete(self.array, -2, axis=1)
+        while np.all(self.array[0, :] == 0):
+            self.array = np.delete(self.array, 0, axis=0)
+        while np.all(self.array[-1, :] == 0):
+            self.array = np.delete(self.array, -1, axis=0)
 
-
-def trim_array(image_array):
-
-    while np.all(image_array[0, :] == 0):
-        image_array = np.delete(image_array, 0, axis=0)
-    while np.all(image_array[-1, :] == 0):
-        image_array = np.delete(image_array, -1, axis=0)
-
-    while np.all(image_array[:, 0] == 0):
-        image_array = np.delete(image_array, 0, axis=1)
-    while np.all(image_array[:, -1] == 0):
-        image_array = np.delete(image_array, -1, axis=1)
-
-    return image_array
+        while np.all(self.array[:, 0] == 0):
+            self.array = np.delete(self.array, 0, axis=1)
+        while np.all(self.array[:, -1] == 0):
+            self.array = np.delete(self.array, -1, axis=1)

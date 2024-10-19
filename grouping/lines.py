@@ -3,11 +3,11 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 
-def find_lines(image_array, epsilon=1):
+def find_lines(array, epsilon=1):
 
     lines = []
-    v_lines = find_v_lines(image_array)
-    h_lines = find_h_lines(image_array)
+    v_lines = find_v_lines(array)
+    h_lines = find_h_lines(array)
 
     lines.extend(v_lines)
     lines.extend(h_lines)
@@ -15,12 +15,12 @@ def find_lines(image_array, epsilon=1):
     for line in v_lines:
 
         y = line[0]
-        image_array[line[1] : line[3] + 1, y] = 3
+        array[line[1] : line[3] + 1, y] = 3
 
     for line in h_lines:
 
         x = line[1]
-        image_array[x, line[0] : line[2] + 1] = 3
+        array[x, line[0] : line[2] + 1] = 3
 
     line_groups = []
     for line in lines:
@@ -29,7 +29,7 @@ def find_lines(image_array, epsilon=1):
 
     point_lines = []
     # cv2.HoughLinesP(
-    #     (image_array == 1).astype(np.uint8),
+    #     (array == 1).astype(np.uint8),
     #     rho=1,
     #     theta=1 * np.pi / 180,
     #     threshold=20,
@@ -37,7 +37,7 @@ def find_lines(image_array, epsilon=1):
     #     maxLineGap=epsilon,
     # )
 
-    base = np.zeros(image_array.shape)
+    base = np.zeros(array.shape)
 
     for line in point_lines:
 
@@ -48,7 +48,7 @@ def find_lines(image_array, epsilon=1):
         cv2.line(base, (line[0], line[1]), (line[2], line[3]), (128, 0, 0), 1)
 
     plt.imsave("./output/lines.png", base)
-    plt.imsave("./output/image_array.png", image_array)
+    plt.imsave("./output/array.png", array)
 
     lines = []
 
@@ -69,20 +69,20 @@ def find_lines(image_array, epsilon=1):
             y = int(y)
             x = int(x)
             try:
-                if image_array[y, x] == 1:
+                if array[y, x] == 1:
 
-                    image_array[y, x] = 3
+                    array[y, x] = 3
             except IndexError:
                 continue
         line_groups.append(point_line)
 
-    return image_array, line_groups
+    return array, line_groups
 
 
-def find_h_lines(image_array):
+def find_h_lines(array):
     lines = []
-    for i in range(len(image_array)):
-        row = image_array[i, :]
+    for i in range(len(array)):
+        row = array[i, :]
 
         groups = []
 
@@ -109,10 +109,10 @@ def find_h_lines(image_array):
     return lines
 
 
-def find_v_lines(image_array):
+def find_v_lines(array):
     lines = []
-    for i in range(len(image_array[0])):
-        row = image_array[:, i]
+    for i in range(len(array[0])):
+        row = array[:, i]
 
         groups = []
 

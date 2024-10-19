@@ -4,11 +4,7 @@ from sklearn.cluster import DBSCAN
 from .group_sort import nearest_neighbor_sort
 
 
-def find_point_groups(data):
-    i_min = np.min(data[:, 0])
-    j_min = np.min(data[:, 1])
-    i_max = np.max(data[:, 0])
-    j_max = np.max(data[:, 1])
+def find_point_groups(data, args):
 
     epsilon = 3
     db = DBSCAN(eps=epsilon).fit(data)
@@ -17,6 +13,6 @@ def find_point_groups(data):
     clusters = [data[labels == i] for i in range(n_clusters)]  # list of clusters
 
     # Sort each group by point to point distance.
-    clusters = [nearest_neighbor_sort(group) for group in clusters]
+    clusters = [nearest_neighbor_sort(group, args.fast) for group in clusters]
 
     return clusters
