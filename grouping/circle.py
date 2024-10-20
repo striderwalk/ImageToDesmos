@@ -1,4 +1,5 @@
 import math
+
 import numpy as np
 
 from .group_sort import nearest_neighbor_sort, pairwise_distance
@@ -19,7 +20,6 @@ def A341198(r):
 def expand_partial_circles(points, p_circles, epsilon=1):
 
     # See if the partial circle is full
-
     circles = []
     for p_circle in p_circles:
         (center_x, center_y), r = get_circle(p_circle)
@@ -72,7 +72,6 @@ def is_partial_circle(points, epsilon=1):
 
     if (x3 - x2) != 0:
         m = (y3 - y2) / (x3 - x2)
-
     else:
         m = math.inf
     m2 = -1 / m if m != 0 else math.inf

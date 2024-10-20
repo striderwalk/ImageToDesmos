@@ -12,20 +12,23 @@ def resize_image(image):
 
 
 class ImageArray:
-    def __init__(self, filename):
+
+    def __init__(self, filename, quantize=None, plot=None):
+        self.plot = plot
+
         # Load the image.
         image = Image.open(filename)
-        # Format the image as grayscale.
+        # This denoise the image somewhat which improve edge detection
+        # Or not
+        if quantize:
+            image = image.quantize(quantize)
+            image.save("output/quantize.png")
 
+        # Format the image as grayscale.
         image = image.convert("RGBA")
         image = image.convert("L")
         # Convert to standard size.
         image = resize_image(image)
-
-        # This denoise the image somewhat which improve edge detection
-        # Or not
-        # image = image.quantize(4)
-        # image.save("output/quantize.png")
 
         # Convert to np array.
         self.array = np.array(image)
@@ -48,22 +51,13 @@ class ImageArray:
         return np.argwhere(self.array == 1)
 
     def save(self, filename):
+        if not self.plot:
+            return
 
         Image.fromarray(self.array * 255).convert("RGBA").save(filename)
 
     def trim_array(self):
         # Remove  outer edges.
-
-        # self.array = np.delete(self.array, 0, axis=0)
-        # self.array = np.delete(self.array, 1, axis=0)
-
-        # self.array = np.delete(self.array, -1, axis=0)
-        # self.array = np.delete(self.array, -2, axis=0)
-        # self.array = np.delete(self.array, 0, axis=1)
-        # self.array = np.delete(self.array, 1, axis=1)
-
-        # self.array = np.delete(self.array, -1, axis=1)
-        # self.array = np.delete(self.array, -2, axis=1)
         while np.all(self.array[0, :] == 0):
             self.array = np.delete(self.array, 0, axis=0)
         while np.all(self.array[-1, :] == 0):

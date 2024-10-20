@@ -36,6 +36,14 @@ def process_args():
         help="Open a desmos page with an interactive graph view",
     )
 
+    parser.add_argument(
+        "-q",
+        "--quantize",
+        type=int,
+        default=None,
+        help="Specify to pre-quantize the image to a given number of colours",
+    )
+
     args = parser.parse_args()
     if args.filename and os.path.exists(args.filename):
         filename = args.filename
@@ -50,7 +58,8 @@ def main():
     # Process the command line arguments
     filename, args = process_args()
     # Load the image:
-    image = ImageArray(filename)
+
+    image = ImageArray(filename, quantize=args.quantize, plot=args.plot)
 
     # Save the image array
     image.save("output/edges.png")
