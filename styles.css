@@ -7,22 +7,29 @@
   position: fixed;
   bottom: 20px;
   right: 17px;
-
-  color: #999;
-
   z-index: 1000;
+
+  background: #ededed;
+  box-shadow: 0 0 5px #00000026;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
 
   cursor: pointer;
 
-  width: 37px;
-  height: 37px;
+  width: 32px;
+  margin: noe;
+  height: 32px;
   padding: 5px;
   border-radius: 5px;
 }
-#button-text {
-  color: #5e5e5e;
+
+#selectFileButton img {
+  filter: brightness(0) saturate(100%) invert(66%) sepia(2%) saturate(0%)
+    hue-rotate(0deg) brightness(40%) contrast(92%);
+  transition: filter 0.1s ease;
 }
 
-#selectFileButton:hover {
-  color: #999;
+#selectFileButton:hover img {
+  filter: brightness(0) saturate(100%) invert(9%) sepia(7%) saturate(9%)
+    hue-rotate(1deg) brightness(89%) contrast(94%);
 }
