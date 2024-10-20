@@ -11,15 +11,16 @@
     <script src="https://www.desmos.com/api/v1.9/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
     <script src="script.js"></script>
 
-    <div id="loadingMessage">
-      Please select a equation file to graph
-      <button id="selectFileButton">Select a File</button>
+    <button id="selectFileButton">
+      <div style="display: none"></div>
+      <img src="folder-open.svg" alt="open folder" />
+    </button>
 
-      <input type="file" id="fileInput" style="display: none" />
-    </div>
+    <input type="file" id="fileInput" style="display: none" />
 
-    <div id="content" style="display: none">
-      <div id="calculator" style="width: 100vw; height: 100vh"></div>
-    </div>
+    <div
+      id="calculator"
+      style="width: 99vw; height: 99vh; max-height: 100vh"
+    ></div>
   </body>
 </html>

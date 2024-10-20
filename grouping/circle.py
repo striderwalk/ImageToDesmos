@@ -79,6 +79,9 @@ def is_partial_circle(points, epsilon=1):
     c2 = ymid - m2 * xmid
 
     # Find centre
+    if m2 - m1 == 0:
+        return False, (0, 0), 0
+
     center_x = (c1 - c2) / (m2 - m1)
     center_y = center_x * m2 + c2
 

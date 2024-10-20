@@ -2,9 +2,9 @@ let calculator;
 
 // Wait until the DOM is fully loaded before attaching event listeners
 document.addEventListener("DOMContentLoaded", function () {
-  var elt = document.getElementById("calculator");
-  calculator = Desmos.GraphingCalculator(elt);
-  var pixelCoordinates = calculator.graphpaperBounds.pixelCoordinates;
+  var calculator_element = document.getElementById("calculator");
+  calculator = Desmos.GraphingCalculator(calculator_element);
+
   var mathCoordinates = calculator.graphpaperBounds.mathCoordinates;
 
   var asp = mathCoordinates.height / mathCoordinates.width;
@@ -26,6 +26,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // When a file is selected
   document.getElementById("fileInput").onchange = function (event) {
     if (event.target.files.length > 0) {
+      calculator.getExpressions().forEach(function (expression_state) {
+        calculator.removeExpression(expression_state);
+      });
       // Get the selected file
       const file = event.target.files[0];
 
@@ -34,11 +37,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Define what happens when the file is read
       reader.onload = function (e) {
-        // Hide loading message and button
-        document.getElementById("loadingMessage").style.display = "none";
-        document.getElementById("selectFileButton").style.display = "none";
-        document.getElementById("content").style.display = "block";
-
         // Get the file content (e.target.result contains the file data)
         const fileContent = e.target.result;
 
