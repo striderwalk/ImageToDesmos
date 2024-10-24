@@ -156,5 +156,4 @@ cython_debug/
 
 output/
 functions/
-
 output.*
