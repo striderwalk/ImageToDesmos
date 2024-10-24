@@ -155,4 +155,6 @@ dmypy.json
 cython_debug/
 
 output/
+functions/
+
 output.*

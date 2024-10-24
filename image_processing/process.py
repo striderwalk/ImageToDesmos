@@ -3,9 +3,9 @@ import numpy as np
 from PIL import Image
 
 
-def resize_image(image):
+def resize_image(image, scale):
     width, height = image.size
-    new_width = min(400, width)
+    new_width = int(width * scale)
     new_height = int(new_width * height / width)
     image = image.resize((new_width, new_height), Image.LANCZOS)
     return image
@@ -13,7 +13,7 @@ def resize_image(image):
 
 class ImageArray:
 
-    def __init__(self, filename, quantize=None, plot=None):
+    def __init__(self, filename, quantize=None, plot=None, scale=1):
         self.plot = plot
 
         # Load the image.
@@ -28,7 +28,7 @@ class ImageArray:
         image = image.convert("RGBA")
         image = image.convert("L")
         # Convert to standard size.
-        image = resize_image(image)
+        image = resize_image(image, scale)
 
         # Convert to np array.
         self.array = np.array(image)

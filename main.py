@@ -44,6 +44,14 @@ def process_args():
         help="Specify to pre-quantize the image to a given number of colours",
     )
 
+    parser.add_argument(
+        "-s",
+        "--scale",
+        type=float,
+        default=1,
+        help="Pick a percentage to scale the image by",
+    )
+
     args = parser.parse_args()
     if args.filename and os.path.exists(args.filename):
         filename = args.filename
@@ -59,7 +67,9 @@ def main():
     filename, args = process_args()
     # Load the image:
 
-    image = ImageArray(filename, quantize=args.quantize, plot=args.plot)
+    image = ImageArray(
+        filename, quantize=args.quantize, plot=args.plot, scale=args.scale
+    )
 
     # Save the image array
     image.save("output/edges.png")
