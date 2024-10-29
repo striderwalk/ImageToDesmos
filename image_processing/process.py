@@ -12,7 +12,6 @@ def resize_image(image, scale):
 
 
 class ImageArray:
-
     def __init__(self, filename, quantize=None, plot=None, scale=1):
         self.plot = plot
 

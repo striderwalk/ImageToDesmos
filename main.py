@@ -11,9 +11,7 @@ from image_processing import ImageArray
 def process_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "filename",
-        type=str,
-        help="The path of the image to process",
+        "filename", type=str, help="The path of the image to process",
     )
     parser.add_argument(
         "-p",
@@ -40,7 +38,7 @@ def process_args():
         "-q",
         "--quantize",
         type=int,
-        default=None,
+        default=2,
         help="Specify to pre-quantize the image to a given number of colours",
     )
 

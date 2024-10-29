@@ -10,7 +10,7 @@ def A341198(r):
     x = r
     y = A = 0
     while y <= x:
-        dx = x**2 + (y + 1) ** 2 - r**2 - x >= 0
+        dx = x ** 2 + (y + 1) ** 2 - r ** 2 - x >= 0
         A += x + (y != 0 and y != x) * (x - 2 * y) + (dx and y == x - 1) * (x - 1)
         x -= dx
         y += 1

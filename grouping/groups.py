@@ -37,7 +37,6 @@ def get_grouped_points(image, args):
 
     for circle in circles:
         for point in circle:
-
             image.array[*point] = 0
 
     partial_circles = find_partical_circles(groups)

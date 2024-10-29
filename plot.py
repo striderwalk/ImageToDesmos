@@ -57,11 +57,7 @@ def plot_gradients(array, group_gradients):
             dx = (math.cos(theta)) * 8
             dy = (math.sin(theta)) * 8
             ax.arrow(
-                (point[1]),
-                (len(array) - point[0]),
-                dx,
-                dy,
-                head_width=2,
+                (point[1]), (len(array) - point[0]), dx, dy, head_width=2,
             )
 
     ax.set_aspect("equal")

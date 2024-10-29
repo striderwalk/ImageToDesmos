@@ -1,6 +1,7 @@
 import re
 
 import numpy as np
+from numpy.polynomial import polynomial
 
 
 def r_squared(func, X, Y):
@@ -22,8 +23,7 @@ def r_squared(func, X, Y):
 def find_poly(X, Y):
 
     polys = [
-        np.polynomial.polynomial.Polynomial(np.polynomial.polynomial.polyfit(X, Y, deg))
-        for deg in range(2, 5)
+        polynomial.Polynomial(polynomial.polyfit(X, Y, deg)) for deg in range(2, 5)
     ]
     for p in polys:
         p.convert()
