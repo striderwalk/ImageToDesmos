@@ -5,16 +5,18 @@ from grouping import find_subgroup_gradient
 
 class Line:
     def __init__(self, X, Y):
+        self.type = "Line"
+
         self.X = X
         self.Y = Y
 
         if np.max(Y) - np.min(Y) == 0:
-            self.type = "hline"
+            self.line_type = "hline"
 
         elif np.max(X) - np.min(X) == 0:
-            self.type = "vline"
+            self.line_type = "vline"
         else:
-            self.type = "line"
+            self.line_type = "line"
 
             grad = find_subgroup_gradient(np.column_stack((X, Y)))
 
@@ -26,9 +28,9 @@ class Line:
         self.domain = np.min(X), np.max(X)
         self.range = np.min(Y), np.max(Y)
 
-    def __repr__(self):
+    def to_latex(self):
 
-        if self.type == "line":
+        if self.line_type == "line":
 
             return (
                 f"y= {self.gradient}x + {self.y_intcept}"
@@ -44,7 +46,7 @@ class Line:
                 + r"\right\}"
             )
 
-        if self.type == "vline":
+        if self.line_type == "vline":
 
             return (
                 f"x = {self.X[0]}"
@@ -55,7 +57,7 @@ class Line:
                 + r"\right\} "
             )
 
-        if self.type == "hline":
+        if self.line_type == "hline":
 
             return (
                 f"y = {self.Y[0]}"

@@ -1,3 +1,4 @@
+import json
 import os
 import warnings
 
@@ -7,23 +8,29 @@ from matplotlib import pyplot as plt
 from .circle import Circle
 from .line import Line
 from .poly import Polynomial
+from .parametric import Parametric
 
 warnings.simplefilter("ignore", np.exceptions.RankWarning)
 
 
-def get_equations(size, grouped_points):
+def get_equations(size, grouped_points, mode="polynomial"):
     groups, circles, partial_circles, lines = grouped_points
     equations = []
-    for group in groups:
 
+    for group in groups:
         X = group[:, 1]
         Y = size[0] - group[:, 0]
-        if np.max(Y) - np.min(Y) == 0 or np.max(X) - np.min(X) == 0:
-            equations.append(Line(X, Y))
 
+        if mode == "polynomial":
+            if np.max(Y) - np.min(Y) == 0 or np.max(X) - np.min(X) == 0:
+                equations.append(Line(X, Y))
+
+            else:
+                equations.append(Polynomial(X, Y))
+        elif mode == "parametric":
+            equations.append(Parametric(X, Y))
         else:
-
-            equations.append(Polynomial(X, Y))
+            raise ValueError("Invalid mode. Use 'polynomial' or 'parametric'.")
 
     for circle in circles:
         X = circle[:, 1]
@@ -46,22 +53,25 @@ def get_equations(size, grouped_points):
 
 
 def write_equations(equations, filename):
-    formulas = []
+    formulas = {}
 
     # Collect all the equations formatted as Latex
     for equation in equations:
-        formulas.append(str(equation))
+        if equation.type not in formulas:
+            formulas[equation.type] = []
+
+        formulas[equation.type] = formulas[equation.type] + [equation.to_latex()]
 
     base = os.path.splitext(os.path.basename(filename))[0]
     with open("functions/" + base + ".equation", "w") as file:
-        for formula in formulas:
-            file.write(formula + "\n")
+        json.dump(formulas, file, indent=4)
 
 
 def make_curves(size, grouped_points, args):
 
     # Get the equations
-    equations = get_equations(size, grouped_points)
+    mode = "parametric" if args.parametric else "polynomial"
+    equations = get_equations(size, grouped_points, mode)
 
     # Save the equations to a file
     write_equations(equations, args.filename)

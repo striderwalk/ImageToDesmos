@@ -45,12 +45,13 @@ def convert_sci_numbers(string):
 
 class Polynomial:
     def __init__(self, X, Y):
+        self.type = "Polynomial"
         self.X = X
         self.Y = Y
 
         self.poly, self.domain = find_poly(X, Y)
 
-    def __repr__(self):
+    def to_latex(self):
         formula = str(self.poly)
 
         formula = re.sub(r"\*\*(\d+)", r"^{\1}", formula)

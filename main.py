@@ -11,7 +11,9 @@ from image_processing import ImageArray
 def process_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "filename", type=str, help="The path of the image to process",
+        "filename",
+        type=str,
+        help="The path of the image to process",
     )
     parser.add_argument(
         "-p",
@@ -49,7 +51,12 @@ def process_args():
         default=1,
         help="Pick a percentage to scale the image by",
     )
-
+    parser.add_argument(
+        "--parametric",
+        action="store_true",
+        default=False,
+        help="Add to use parameteretric curve fitting instead of polynomial fitting",
+    )
     args = parser.parse_args()
     if args.filename and os.path.exists(args.filename):
         filename = args.filename

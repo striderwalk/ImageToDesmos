@@ -30,24 +30,26 @@ def find_partial_circle(X, Y):
 
 class Circle:
     def __init__(self, X, Y, mode="full"):
+        self.type = "Circle"
+
         self.X = X
         self.Y = Y
-        self.type = mode
+        self.circle_type = mode
 
-        if self.type == "full":
+        if self.circle_type == "full":
             self.center, self.r = find_full_circle(X, Y)
 
-        elif self.type == "partial":
+        elif self.circle_type == "partial":
 
             self.center, self.r, self.m, self.c, self.eq_type = find_partial_circle(
                 X, Y
             )
 
-    def __repr__(self):
-        if self.type == "full":
+    def to_latex(self):
+        if self.circle_type == "full":
 
             return f"(x - {self.center[0]})^2 + (y - {self.center[1]})^2 = {self.r**2}"
-        elif self.type == "partial":
+        elif self.circle_type == "partial":
 
             formula = (
                 f"(x - {self.center[0]})^2 + (y - {self.center[1]})^2 = {self.r**2}"
@@ -60,11 +62,11 @@ class Circle:
             return formula + bounds
 
     def plot(self, ax):
-        if self.type == "full":
+        if self.circle_type == "full":
 
             ax.add_patch(plt.Circle(self.center, self.r, fill=False))
 
-        elif self.type == "partial":
+        elif self.circle_type == "partial":
 
             points = [
                 (

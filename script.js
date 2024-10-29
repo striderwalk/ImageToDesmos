@@ -25,39 +25,63 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // When a file is selected
   document.getElementById("fileInput").onchange = function (event) {
-    if (event.target.files.length > 0) {
-      calculator.getExpressions().forEach(function (expression_state) {
-        calculator.removeExpression(expression_state);
-      });
-      // Get the selected file
-      const file = event.target.files[0];
+    if (event.target.files.length < 0) {
+      return;
+    }
 
-      // Create a new FileReader object
-      const reader = new FileReader();
+    calculator.getExpressions().forEach(function (expression_state) {
+      calculator.removeExpression(expression_state);
+    });
 
-      // Define what happens when the file is read
-      reader.onload = function (e) {
-        // Get the file content (e.target.result contains the file data)
-        const fileContent = e.target.result;
+    file = event.target.files[0];
+    const reader = new FileReader();
 
-        // Split content by new lines to get an array of lines
-        const lines = fileContent.split(/\r?\n/); // This handles both Windows (\r\n) and Unix (\n) line endings
+    reader.onload = function (event) {
+      const data = JSON.parse(event.target.result);
 
-        // Apply a function to each line
-        lines.forEach((element, index) => {
-          console.log(element);
+      if (data.Polynomial) {
+        // Add polynomials
+        data.Polynomial.map((poly) => {
           calculator.setExpression({
-            latex: element,
+            latex: poly,
+            color: "#000000",
+            folderId: "polynomial",
+          });
+        });
+      }
+      if (data.Line) {
+        // Add Line
+        data.Line.map((line) => {
+          calculator.setExpression({
+            latex: line,
             color: "#000000",
           });
         });
-      };
+      }
+      if (data.Circle) {
+        // Add Circle
+        data.Circle.map((circle) => {
+          calculator.setExpression({
+            latex: circle,
+            color: "#000000",
+          });
+        });
+      }
 
-      // Read the file as text
-      reader.readAsText(file);
-    } else {
-      // No file selected, prompt again
-      alert("Please select a file to proceed.");
-    }
+      if (data.Parametric) {
+        // Add Parametric
+        data.Parametric.map((parametric) => {
+          calculator.setExpression({
+            latex: parametric.equation,
+            parametricDomain: {
+              min: parametric.bounds.min,
+              max: parametric.bounds.max,
+            },
+            color: "#000000",
+          });
+        });
+      }
+    };
+    reader.readAsText(file);
   };
 });
