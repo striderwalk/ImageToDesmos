@@ -16,7 +16,6 @@ def process_args():
         help="The path of the image to process",
     )
     parser.add_argument(
-        "-p",
         "--plot",
         action="store_true",
         default=False,
@@ -52,6 +51,7 @@ def process_args():
         help="Pick a percentage to scale the image by",
     )
     parser.add_argument(
+        "-p",
         "--parametric",
         action="store_true",
         default=False,

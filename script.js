@@ -5,17 +5,6 @@ document.addEventListener("DOMContentLoaded", function () {
   var calculator_element = document.getElementById("calculator");
   calculator = Desmos.GraphingCalculator(calculator_element);
 
-  var mathCoordinates = calculator.graphpaperBounds.mathCoordinates;
-
-  var asp = mathCoordinates.height / mathCoordinates.width;
-
-  calculator.setMathBounds({
-    left: 0,
-    right: 400,
-    bottom: 0,
-    top: asp * 400,
-  });
-
   // When the user clicks the button, trigger the file input
   document
     .getElementById("selectFileButton")
@@ -39,6 +28,17 @@ document.addEventListener("DOMContentLoaded", function () {
     reader.onload = function (event) {
       const data = JSON.parse(event.target.result);
 
+      var mathCoordinates = calculator.graphpaperBounds.mathCoordinates;
+
+      var asp = mathCoordinates.width / mathCoordinates.height;
+
+      calculator.setMathBounds({
+        left: 0,
+        right: asp * data.bounds.y,
+        bottom: 0,
+        top: data.bounds.y,
+      });
+
       if (data.Polynomial) {
         // Add polynomials
         data.Polynomial.map((poly) => {
@@ -49,6 +49,7 @@ document.addEventListener("DOMContentLoaded", function () {
           });
         });
       }
+
       if (data.Line) {
         // Add Line
         data.Line.map((line) => {

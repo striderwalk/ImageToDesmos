@@ -55,9 +55,9 @@ class Circle:
                 f"(x - {self.center[0]})^2 + (y - {self.center[1]})^2 = {self.r**2}"
             )
             if self.eq_type == "gt":
-                bounds = r"\left\{" + f"{self.m}x + {self.c} >= y" + r"\right\}"
-            else:
                 bounds = r"\left\{" + f"{self.m}x + {self.c} <= y" + r"\right\}"
+            else:
+                bounds = r"\left\{" + f"{self.m}x + {self.c} >= y" + r"\right\}"
 
             return formula + bounds
 

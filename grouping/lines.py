@@ -79,7 +79,7 @@ def find_lines(array, epsilon=1):
     return array, line_groups
 
 
-def find_h_lines(array):
+def find_h_lines(array, length=30):
     lines = []
     for i in range(len(array)):
         row = array[i, :]
@@ -103,13 +103,13 @@ def find_h_lines(array):
             groups.append((start_j, len(row) - 1))
 
         for group in groups:
-            if group[1] - group[0] >= 10:
+            if group[1] - group[0] >= length:
                 lines.append((group[0], i, group[1], i))
 
     return lines
 
 
-def find_v_lines(array):
+def find_v_lines(array, length=30):
     lines = []
     for i in range(len(array[0])):
         row = array[:, i]
@@ -133,7 +133,7 @@ def find_v_lines(array):
             groups.append((start_j, len(row) - 1))
 
         for group in groups:
-            if group[1] - group[0] >= 10:
+            if group[1] - group[0] >= length:
                 lines.append((i, group[0], i, group[1]))
 
     return lines

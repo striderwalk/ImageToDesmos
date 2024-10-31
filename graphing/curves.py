@@ -52,8 +52,8 @@ def get_equations(size, grouped_points, mode="polynomial"):
     return equations
 
 
-def write_equations(equations, filename):
-    formulas = {}
+def write_equations(equations, bounds, filename):
+    formulas = {"bounds": {"x": bounds[0], "y": bounds[1]}}
 
     # Collect all the equations formatted as Latex
     for equation in equations:
@@ -74,7 +74,7 @@ def make_curves(size, grouped_points, args):
     equations = get_equations(size, grouped_points, mode)
 
     # Save the equations to a file
-    write_equations(equations, args.filename)
+    write_equations(equations, size, args.filename)
 
     # Plot the curves if desired
     if not args.plot:

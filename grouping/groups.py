@@ -27,7 +27,7 @@ def get_grouped_points(image, args):
             "\u001b[31;1mWARNING\u001b[0m: Mean group is very low meaing image is likely poorly suited to this algorithm"
         )
 
-    if sum(sizes) / len(sizes) > 600:
+    if sum(sizes) / len(sizes) > 1000:
         print(
             "\u001b[31;1mWARNING\u001b[0m: Mean group is very high meaing image may be poorly suited to this algorithm"
         )
